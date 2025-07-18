@@ -1,0 +1,116 @@
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Bell, Info, CheckCircle, X } from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+
+export default function Notifications() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: notifications, isLoading } = useQuery({
+    queryKey: ["/api/notifications"],
+    select: (data) => data.slice(0, 5), // Show only first 5 notifications
+  });
+
+  const markAsReadMutation = useMutation({
+    mutationFn: async (notificationId: number) => {
+      await apiRequest("PUT", `/api/notifications/${notificationId}/read`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
+    },
+  });
+
+  const formatTimeAgo = (date: string) => {
+    const now = new Date();
+    const notificationDate = new Date(date);
+    const diffInHours = Math.floor((now.getTime() - notificationDate.getTime()) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) return "agora";
+    if (diffInHours < 24) return `${diffInHours}h atrás`;
+    return `${Math.floor(diffInHours / 24)}d atrás`;
+  };
+
+  const handleDismiss = (notificationId: number) => {
+    markAsReadMutation.mutate(notificationId);
+  };
+
+  if (isLoading) {
+    return (
+      <section className="mb-8">
+        <Card>
+          <CardContent className="p-6">
+            <div className="animate-pulse space-y-4">
+              <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+              <div className="space-y-2">
+                <div className="h-16 bg-gray-200 rounded"></div>
+                <div className="h-16 bg-gray-200 rounded"></div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </section>
+    );
+  }
+
+  return (
+    <section className="mb-8">
+      <Card>
+        <CardHeader>
+          <CardTitle>Notificações</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {!notifications?.length ? (
+            <div className="text-center py-8">
+              <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">
+                Nenhuma notificação no momento
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {notifications.map((notification: any) => (
+                <div
+                  key={notification.id}
+                  className={`flex items-center p-3 rounded-lg border ${
+                    notification.read 
+                      ? "bg-muted border-border" 
+                      : "bg-blue-50 border-blue-200"
+                  }`}
+                >
+                  <div className="flex-shrink-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                    {notification.message.includes("confirmado") ? (
+                      <CheckCircle className="h-4 w-4 text-white" />
+                    ) : (
+                      <Info className="h-4 w-4 text-white" />
+                    )}
+                  </div>
+                  <div className="ml-3 flex-1">
+                    <p className="text-sm font-medium text-foreground">
+                      {notification.message}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatTimeAgo(notification.createdAt)}
+                    </p>
+                  </div>
+                  {!notification.read && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDismiss(notification.id)}
+                      disabled={markAsReadMutation.isPending}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </section>
+  );
+}

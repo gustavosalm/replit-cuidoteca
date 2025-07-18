@@ -1,0 +1,80 @@
+import { useAuth } from "@/hooks/use-auth";
+import { useLocation } from "wouter";
+import { Button } from "@/components/ui/button";
+import { Heart, Bell, User } from "lucide-react";
+
+export default function Header() {
+  const { user, logout } = useAuth();
+  const [location, setLocation] = useLocation();
+
+  const handleLogout = () => {
+    logout();
+    setLocation("/login");
+  };
+
+  return (
+    <header className="bg-card shadow-sm border-b border-border">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
+          <div className="flex items-center">
+            <div className="flex-shrink-0 flex items-center">
+              <Heart className="h-8 w-8 text-accent mr-3" />
+              <h1 className="text-xl font-semibold text-foreground">Cuidoteca</h1>
+            </div>
+          </div>
+          
+          <div className="hidden md:block">
+            <div className="ml-10 flex items-baseline space-x-4">
+              <Button
+                variant={location === "/" ? "default" : "ghost"}
+                onClick={() => setLocation("/")}
+              >
+                Dashboard
+              </Button>
+              <Button
+                variant={location === "/scheduling" ? "default" : "ghost"}
+                onClick={() => setLocation("/scheduling")}
+              >
+                Agendamento
+              </Button>
+              <Button
+                variant={location === "/community" ? "default" : "ghost"}
+                onClick={() => setLocation("/community")}
+              >
+                Comunidade
+              </Button>
+              <Button
+                variant={location === "/profile" ? "default" : "ghost"}
+                onClick={() => setLocation("/profile")}
+              >
+                Perfil
+              </Button>
+              {user?.role === "coordinator" && (
+                <Button
+                  variant={location === "/admin" ? "default" : "ghost"}
+                  onClick={() => setLocation("/admin")}
+                >
+                  Admin
+                </Button>
+              )}
+            </div>
+          </div>
+          
+          <div className="flex items-center space-x-4">
+            <div className="relative">
+              <Button variant="ghost" size="sm">
+                <Bell className="h-4 w-4" />
+                <span className="absolute -top-1 -right-1 block h-2 w-2 rounded-full bg-accent"></span>
+              </Button>
+            </div>
+            <div className="relative">
+              <Button variant="ghost" size="sm" onClick={handleLogout}>
+                <User className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+}
