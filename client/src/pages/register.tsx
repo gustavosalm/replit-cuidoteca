@@ -15,7 +15,7 @@ export default function Register() {
   const { register } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [userType, setUserType] = useState<"parent" | "institution">("parent");
+  const [userType, setUserType] = useState<"parent" | "institution" | "cuidador">("parent");
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -112,7 +112,8 @@ export default function Register() {
           <div className="flex items-center space-x-2 cursor-pointer" onClick={() => setLocation("/")}>
             <Heart className="h-6 w-6 text-accent hover:scale-110 transition-transform" />
             <CardTitle className="text-xl hover:text-accent transition-colors">
-              {userType === "institution" ? "Cadastro de Instituição" : "Cadastro de Responsável"}
+              {userType === "institution" ? "Cadastro de Instituição" : 
+               userType === "cuidador" ? "Cadastro de Cuidador" : "Cadastro de Responsável"}
             </CardTitle>
           </div>
           <Button
@@ -128,23 +129,32 @@ export default function Register() {
             {/* User Type Selection */}
             <div className="space-y-4">
               <Label>Tipo de Perfil</Label>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-3">
                 <Button
                   type="button"
                   variant={userType === "parent" ? "default" : "outline"}
                   onClick={() => setUserType("parent")}
-                  className="h-16 flex-col"
+                  className="h-16 flex-col text-sm"
                 >
-                  <Heart className="h-6 w-6 mb-2" />
+                  <Heart className="h-5 w-5 mb-1" />
                   Responsável
+                </Button>
+                <Button
+                  type="button"
+                  variant={userType === "cuidador" ? "default" : "outline"}
+                  onClick={() => setUserType("cuidador")}
+                  className="h-16 flex-col text-sm"
+                >
+                  <Heart className="h-5 w-5 mb-1" />
+                  Cuidador
                 </Button>
                 <Button
                   type="button"
                   variant={userType === "institution" ? "default" : "outline"}
                   onClick={() => setUserType("institution")}
-                  className="h-16 flex-col"
+                  className="h-16 flex-col text-sm"
                 >
-                  <Building className="h-6 w-6 mb-2" />
+                  <Building className="h-5 w-5 mb-1" />
                   Instituição
                 </Button>
               </div>
@@ -191,8 +201,8 @@ export default function Register() {
               </div>
             )}
             
-            {/* Parent-specific fields */}
-            {userType === "parent" && (
+            {/* Parent and Cuidador specific fields */}
+            {(userType === "parent" || userType === "cuidador") && (
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">

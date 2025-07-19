@@ -45,28 +45,42 @@ export default function CuidotecasSection({ institutionId, user }: CuidotecasSec
     enabled: user?.role === 'parent',
   });
 
-  const { data: enrollments = [] } = useQuery({
+  const { data: childrenEnrollments = [] } = useQuery({
     queryKey: ["/api/enrollments/my-children"],
     enabled: user?.role === 'parent',
+  });
+
+  const { data: cuidadorEnrollments = [] } = useQuery({
+    queryKey: ["/api/enrollments/my-cuidador"],
+    enabled: user?.role === 'cuidador',
   });
 
   const enrollMutation = useMutation({
     mutationFn: async ({ cuidotecaId, childId, requestedDays, requestedHours }: { 
       cuidotecaId: number; 
-      childId: number; 
+      childId?: number; 
       requestedDays: string[]; 
       requestedHours: string 
     }) => {
-      return await apiRequest(
-        "POST",
-        `/api/cuidotecas/${cuidotecaId}/enroll`,
-        { childId, requestedDays, requestedHours }
-      );
+      if (user?.role === 'cuidador') {
+        return await apiRequest(
+          "POST",
+          `/api/cuidotecas/${cuidotecaId}/enroll-cuidador`,
+          { requestedDays, requestedHours }
+        );
+      } else {
+        return await apiRequest(
+          "POST",
+          `/api/cuidotecas/${cuidotecaId}/enroll`,
+          { childId, requestedDays, requestedHours }
+        );
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/cuidotecas"] });
       queryClient.invalidateQueries({ queryKey: ["/api/children"] });
       queryClient.invalidateQueries({ queryKey: ["/api/enrollments/my-children"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/enrollments/my-cuidador"] });
       setEnrollModalOpen(false);
       setSelectedChild("");
       setSelectedCuidoteca(null);
@@ -99,35 +113,67 @@ export default function CuidotecasSection({ institutionId, user }: CuidotecasSec
 
   // Helper function to check if child is already enrolled in a cuidoteca
   const isChildAlreadyEnrolled = (childId: number, cuidotecaId: number) => {
-    return enrollments.some((enrollment: any) => 
+    return childrenEnrollments.some((enrollment: any) => 
       enrollment.childId === childId && 
       enrollment.cuidotecaId === cuidotecaId &&
       (enrollment.status === 'pending' || enrollment.status === 'confirmed')
     );
   };
 
+  // Helper function to check if cuidador is already enrolled in a cuidoteca
+  const isCuidadorAlreadyEnrolled = (cuidotecaId: number) => {
+    return cuidadorEnrollments.some((enrollment: any) => 
+      enrollment.cuidotecaId === cuidotecaId &&
+      (enrollment.status === 'pending' || enrollment.status === 'confirmed')
+    );
+  };
+
   const handleEnroll = () => {
-    if (!selectedChild || !selectedCuidoteca || selectedDays.length === 0 || !fromHour || !untilHour) return;
-    
-    // Check for duplicate enrollment
-    const childId = parseInt(selectedChild);
-    if (isChildAlreadyEnrolled(childId, selectedCuidoteca.id)) {
-      toast({
-        title: "Já inscrito",
-        description: "Criança já está inscrita, aguardando aprovação da instituição",
-        variant: "destructive",
+    if (user?.role === 'cuidador') {
+      // Cuidador enrollment logic
+      if (!selectedCuidoteca || selectedDays.length === 0 || !fromHour || !untilHour) return;
+      
+      // Check for duplicate enrollment
+      if (isCuidadorAlreadyEnrolled(selectedCuidoteca.id)) {
+        toast({
+          title: "Já inscrito",
+          description: "Você já está inscrito, aguardando aprovação da instituição",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      const requestedHours = `${fromHour}-${untilHour}`;
+      
+      enrollMutation.mutate({
+        cuidotecaId: selectedCuidoteca.id,
+        requestedDays: selectedDays,
+        requestedHours: requestedHours
       });
-      return;
+    } else {
+      // Parent enrollment logic (existing)
+      if (!selectedChild || !selectedCuidoteca || selectedDays.length === 0 || !fromHour || !untilHour) return;
+      
+      // Check for duplicate enrollment
+      const childId = parseInt(selectedChild);
+      if (isChildAlreadyEnrolled(childId, selectedCuidoteca.id)) {
+        toast({
+          title: "Já inscrito",
+          description: "Criança já está inscrita, aguardando aprovação da instituição",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      const requestedHours = `${fromHour}-${untilHour}`;
+      
+      enrollMutation.mutate({
+        cuidotecaId: selectedCuidoteca.id,
+        childId: childId,
+        requestedDays: selectedDays,
+        requestedHours: requestedHours
+      });
     }
-    
-    const requestedHours = `${fromHour}-${untilHour}`;
-    
-    enrollMutation.mutate({
-      cuidotecaId: selectedCuidoteca.id,
-      childId: childId,
-      requestedDays: selectedDays,
-      requestedHours: requestedHours
-    });
   };
 
   const formatDays = (days: string[]) => {
@@ -208,14 +254,14 @@ export default function CuidotecasSection({ institutionId, user }: CuidotecasSec
                           <h4 className="font-medium text-foreground">{cuidoteca.name}</h4>
                         </div>
                       </div>
-                      {user?.role === 'parent' && (
+                      {(user?.role === 'parent' || user?.role === 'cuidador') && (
                         <Button 
                           size="sm" 
                           onClick={() => handleEnrollClick(cuidoteca)}
                           disabled={enrollMutation.isPending}
                         >
                           <UserPlus className="h-4 w-4 mr-1" />
-                          Inscrever
+                          {user?.role === 'cuidador' ? 'Inscrever-se' : 'Inscrever'}
                         </Button>
                       )}
                     </div>
@@ -264,7 +310,9 @@ export default function CuidotecasSection({ institutionId, user }: CuidotecasSec
       <Dialog open={enrollModalOpen} onOpenChange={setEnrollModalOpen}>
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
-            <DialogTitle>Inscrever Criança na Cuidoteca</DialogTitle>
+            <DialogTitle>
+              {user?.role === 'cuidador' ? 'Inscrever-se na Cuidoteca' : 'Inscrever Criança na Cuidoteca'}
+            </DialogTitle>
           </DialogHeader>
           
           <div className="space-y-4">
@@ -277,21 +325,23 @@ export default function CuidotecasSection({ institutionId, user }: CuidotecasSec
               </p>
             </div>
 
-            <div>
-              <label className="text-sm font-medium">Selecione a criança:</label>
-              <Select value={selectedChild} onValueChange={setSelectedChild}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="Escolha uma criança" />
-                </SelectTrigger>
-                <SelectContent>
-                  {children.map((child: any) => (
-                    <SelectItem key={child.id} value={child.id.toString()}>
-                      {child.name} ({child.age} anos)
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {user?.role === 'parent' && (
+              <div>
+                <label className="text-sm font-medium">Selecione a criança:</label>
+                <Select value={selectedChild} onValueChange={setSelectedChild}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Escolha uma criança" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {children.map((child: any) => (
+                      <SelectItem key={child.id} value={child.id.toString()}>
+                        {child.name} ({child.age} anos)
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <div>
               <label className="text-sm font-medium mb-3 block">Selecione os dias:</label>

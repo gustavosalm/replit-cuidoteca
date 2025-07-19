@@ -602,6 +602,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Cuidador enrollment routes
+  app.get('/api/enrollments/my-cuidador', authenticateToken, async (req, res) => {
+    try {
+      if (req.user.role !== 'cuidador') {
+        return res.status(403).json({ message: 'Only cuidadores can view their enrollments' });
+      }
+      const enrollments = await storage.getCuidadorEnrollments(req.user.id);
+      res.json(enrollments);
+    } catch (error) {
+      console.error('Get cuidador enrollments error:', error);
+      res.status(500).json({ message: 'Failed to get enrollments' });
+    }
+  });
+
+  app.post('/api/cuidotecas/:id/enroll-cuidador', authenticateToken, async (req, res) => {
+    try {
+      if (req.user.role !== 'cuidador') {
+        return res.status(403).json({ message: 'Only cuidadores can enroll in cuidotecas' });
+      }
+
+      const cuidotecaId = parseInt(req.params.id);
+      const { requestedDays, requestedHours } = req.body;
+
+      // Validate enrollment data
+      const enrollmentData = {
+        cuidotecaId,
+        cuidadorId: req.user.id,
+        requestedDays,
+        requestedHours,
+      };
+
+      const enrollment = await storage.enrollCuidadorInCuidoteca(enrollmentData);
+      res.status(201).json(enrollment);
+    } catch (error) {
+      console.error('Cuidador enrollment error:', error);
+      res.status(400).json({ message: 'Failed to enroll cuidador' });
+    }
+  });
+
   // Enrollment management routes
   app.get('/api/enrollments/pending', authenticateToken, async (req, res) => {
     try {

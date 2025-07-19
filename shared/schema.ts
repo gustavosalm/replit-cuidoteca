@@ -3,7 +3,7 @@ import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const userRoleEnum = pgEnum("user_role", ["parent", "coordinator", "caregiver", "institution"]);
+export const userRoleEnum = pgEnum("user_role", ["parent", "coordinator", "caregiver", "institution", "cuidador"]);
 export const scheduleStatusEnum = pgEnum("schedule_status", ["pending", "confirmed", "cancelled"]);
 export const dayOfWeekEnum = pgEnum("day_of_week", ["monday", "tuesday", "wednesday", "thursday", "friday"]);
 export const periodEnum = pgEnum("period", ["morning", "afternoon", "full_day"]);
@@ -82,6 +82,16 @@ export const cuidotecaEnrollments = pgTable("cuidoteca_enrollments", {
   id: serial("id").primaryKey(),
   cuidotecaId: integer("cuidoteca_id").references(() => cuidotecas.id).notNull(),
   childId: integer("child_id").references(() => children.id).notNull(),
+  enrollmentDate: timestamp("enrollment_date").defaultNow().notNull(),
+  status: scheduleStatusEnum("status").notNull().default("pending"),
+  requestedDays: text("requested_days").array().notNull(),
+  requestedHours: text("requested_hours").notNull(),
+});
+
+export const cuidadorEnrollments = pgTable("cuidador_enrollments", {
+  id: serial("id").primaryKey(),
+  cuidotecaId: integer("cuidoteca_id").references(() => cuidotecas.id).notNull(),
+  cuidadorId: integer("cuidador_id").references(() => users.id).notNull(),
   enrollmentDate: timestamp("enrollment_date").defaultNow().notNull(),
   status: scheduleStatusEnum("status").notNull().default("pending"),
   requestedDays: text("requested_days").array().notNull(),
@@ -225,6 +235,11 @@ export const insertCuidotecaEnrollmentSchema = createInsertSchema(cuidotecaEnrol
   enrollmentDate: true,
 });
 
+export const insertCuidadorEnrollmentSchema = createInsertSchema(cuidadorEnrollments).omit({
+  id: true,
+  enrollmentDate: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -244,6 +259,8 @@ export type Cuidoteca = typeof cuidotecas.$inferSelect;
 export type InsertCuidoteca = z.infer<typeof insertCuidotecaSchema>;
 export type CuidotecaEnrollment = typeof cuidotecaEnrollments.$inferSelect;
 export type InsertCuidotecaEnrollment = z.infer<typeof insertCuidotecaEnrollmentSchema>;
+export type CuidadorEnrollment = typeof cuidadorEnrollments.$inferSelect;
+export type InsertCuidadorEnrollment = z.infer<typeof insertCuidadorEnrollmentSchema>;
 
 // Extended types for queries with relations
 export type UserWithChildren = User & {

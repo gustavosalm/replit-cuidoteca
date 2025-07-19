@@ -7,6 +7,7 @@ import {
   universityConnections,
   cuidotecas,
   cuidotecaEnrollments,
+  cuidadorEnrollments,
   type User, 
   type InsertUser,
   type Child,
@@ -23,6 +24,8 @@ import {
   type InsertCuidoteca,
   type CuidotecaEnrollment,
   type InsertCuidotecaEnrollment,
+  type CuidadorEnrollment,
+  type InsertCuidadorEnrollment,
   type UserWithChildren,
   type ChildWithSchedules,
   type PostWithAuthor,
@@ -94,6 +97,10 @@ export interface IStorage {
   
   // Parent enrollment operations
   getParentChildrenEnrollments(parentId: number): Promise<any[]>;
+  
+  // Cuidador enrollment operations
+  getCuidadorEnrollments(cuidadorId: number): Promise<any[]>;
+  enrollCuidadorInCuidoteca(enrollment: InsertCuidadorEnrollment): Promise<CuidadorEnrollment>;
 
   // Admin operations
   getAdminStats(): Promise<{
@@ -539,6 +546,43 @@ export class DatabaseStorage implements IStorage {
       .where(eq(children.parentId, parentId));
     
     return result;
+  }
+
+  async getCuidadorEnrollments(cuidadorId: number): Promise<any[]> {
+    const result = await db
+      .select({
+        id: cuidadorEnrollments.id,
+        cuidadorId: cuidadorEnrollments.cuidadorId,
+        cuidotecaId: cuidadorEnrollments.cuidotecaId,
+        status: cuidadorEnrollments.status,
+        requestedDays: cuidadorEnrollments.requestedDays,
+        requestedHours: cuidadorEnrollments.requestedHours,
+        enrollmentDate: cuidadorEnrollments.enrollmentDate,
+        cuidoteca: {
+          id: cuidotecas.id,
+          name: cuidotecas.name,
+          institutionId: cuidotecas.institutionId,
+        },
+        institution: {
+          id: users.id,
+          name: users.name,
+          institutionName: users.institutionName,
+        },
+      })
+      .from(cuidadorEnrollments)
+      .innerJoin(cuidotecas, eq(cuidadorEnrollments.cuidotecaId, cuidotecas.id))
+      .innerJoin(users, eq(cuidotecas.institutionId, users.id))
+      .where(eq(cuidadorEnrollments.cuidadorId, cuidadorId));
+    
+    return result;
+  }
+
+  async enrollCuidadorInCuidoteca(enrollment: InsertCuidadorEnrollment): Promise<CuidadorEnrollment> {
+    const [newEnrollment] = await db
+      .insert(cuidadorEnrollments)
+      .values(enrollment)
+      .returning();
+    return newEnrollment;
   }
 
   async getAdminStats(): Promise<{

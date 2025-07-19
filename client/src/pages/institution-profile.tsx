@@ -216,7 +216,7 @@ export default function InstitutionProfile() {
                       className="w-full"
                     >
                       <GraduationCap className="h-4 w-4 mr-2" />
-                      {connectMutation.isPending ? "Conectando..." : "Sou estudante"}
+                      {connectMutation.isPending ? "Conectando..." : user?.role === "cuidador" ? "Sou cuidador" : "Sou estudante"}
                     </Button>
                   )}
                 </div>
