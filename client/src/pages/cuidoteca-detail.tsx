@@ -13,7 +13,8 @@ import {
   MapPin,
   CheckCircle,
   AlertCircle,
-  User
+  User,
+  MessageSquare
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -219,18 +220,22 @@ export default function CuidotecaDetail() {
                 {approvedCuidadores.map((enrollment: EnrolledCuidador) => (
                   <Card 
                     key={enrollment.id} 
-                    className="hover:shadow-md transition-shadow cursor-pointer"
-                    onClick={() => setLocation(`/profile/${enrollment.cuidador.id}`)}
+                    className="hover:shadow-md transition-shadow"
                   >
                     <CardContent className="p-4">
-                      <div className="flex items-center space-x-3">
+                      <div className="flex items-center space-x-3 mb-3">
                         <Avatar>
                           <AvatarFallback>
                             {enrollment.cuidador.name.split(' ').map(n => n[0]).join('').toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-medium truncate">{enrollment.cuidador.name}</h4>
+                          <h4 
+                            className="font-medium truncate cursor-pointer hover:text-primary"
+                            onClick={() => setLocation(`/profile/${enrollment.cuidador.id}`)}
+                          >
+                            {enrollment.cuidador.name}
+                          </h4>
                           <div className="text-sm text-muted-foreground space-y-1">
                             {enrollment.cuidador.course && (
                               <p className="truncate">{enrollment.cuidador.course}</p>
@@ -243,6 +248,17 @@ export default function CuidotecaDetail() {
                           </div>
                         </div>
                       </div>
+                      {user && user.role === "parent" && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="w-full"
+                          onClick={() => setLocation(`/messages?user=${enrollment.cuidador.id}`)}
+                        >
+                          <MessageSquare className="h-4 w-4 mr-2" />
+                          Enviar mensagem
+                        </Button>
+                      )}
                     </CardContent>
                   </Card>
                 ))}

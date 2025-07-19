@@ -134,6 +134,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get user by ID
+  app.get('/api/users/:id', authenticateToken, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: 'Invalid user ID' });
+      }
+
+      const user = await storage.getUserById(userId);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      // Return limited user info for privacy
+      res.json({
+        id: user.id,
+        name: user.name,
+        profilePicture: user.profilePicture,
+        role: user.role,
+      });
+    } catch (error) {
+      console.error('Get user error:', error);
+      res.status(500).json({ message: 'Failed to get user' });
+    }
+  });
+
   app.get('/api/users/public/:id', authenticateToken, async (req, res) => {
     try {
       const userId = parseInt(req.params.id);
@@ -913,6 +939,85 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Get pending cuidadores error:', error);
       res.status(500).json({ message: 'Failed to get pending cuidadores' });
+    }
+  });
+
+  // Profile picture upload
+  app.post('/api/users/profile-picture', authenticateToken, async (req, res) => {
+    try {
+      const { profilePictureData } = req.body;
+      
+      if (!profilePictureData) {
+        return res.status(400).json({ message: 'Profile picture data is required' });
+      }
+
+      const updatedUser = await storage.updateUserProfilePicture(req.user.id, profilePictureData);
+      res.json(updatedUser);
+    } catch (error) {
+      console.error('Upload profile picture error:', error);
+      res.status(500).json({ message: 'Failed to upload profile picture' });
+    }
+  });
+
+  // Message routes
+  app.get('/api/messages/conversations', authenticateToken, async (req, res) => {
+    try {
+      const conversations = await storage.getUserConversations(req.user.id);
+      res.json(conversations);
+    } catch (error) {
+      console.error('Get conversations error:', error);
+      res.status(500).json({ message: 'Failed to get conversations' });
+    }
+  });
+
+  app.get('/api/messages/:otherUserId', authenticateToken, async (req, res) => {
+    try {
+      const otherUserId = parseInt(req.params.otherUserId);
+      if (isNaN(otherUserId)) {
+        return res.status(400).json({ message: 'Invalid user ID' });
+      }
+
+      const messages = await storage.getMessages(req.user.id, otherUserId);
+      res.json(messages);
+    } catch (error) {
+      console.error('Get messages error:', error);
+      res.status(500).json({ message: 'Failed to get messages' });
+    }
+  });
+
+  app.post('/api/messages', authenticateToken, async (req, res) => {
+    try {
+      const { receiverId, content } = req.body;
+      
+      if (!receiverId || !content) {
+        return res.status(400).json({ message: 'Receiver ID and content are required' });
+      }
+
+      const message = await storage.sendMessage({
+        senderId: req.user.id,
+        receiverId,
+        content,
+      });
+      
+      res.json(message);
+    } catch (error) {
+      console.error('Send message error:', error);
+      res.status(500).json({ message: 'Failed to send message' });
+    }
+  });
+
+  app.put('/api/messages/:messageId/read', authenticateToken, async (req, res) => {
+    try {
+      const messageId = parseInt(req.params.messageId);
+      if (isNaN(messageId)) {
+        return res.status(400).json({ message: 'Invalid message ID' });
+      }
+
+      await storage.markMessageAsRead(messageId);
+      res.json({ message: 'Message marked as read' });
+    } catch (error) {
+      console.error('Mark message as read error:', error);
+      res.status(500).json({ message: 'Failed to mark message as read' });
     }
   });
 

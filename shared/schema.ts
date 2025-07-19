@@ -22,6 +22,7 @@ export const users = pgTable("users", {
   // Institution-specific fields
   institutionName: text("institution_name"),
   memberCount: integer("member_count").default(0),
+  profilePicture: text("profile_picture"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -98,6 +99,15 @@ export const cuidadorEnrollments = pgTable("cuidador_enrollments", {
   requestedHours: text("requested_hours").notNull(),
 });
 
+export const messages = pgTable("messages", {
+  id: serial("id").primaryKey(),
+  senderId: integer("sender_id").references(() => users.id).notNull(),
+  receiverId: integer("receiver_id").references(() => users.id).notNull(),
+  content: text("content").notNull(),
+  read: boolean("read").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   children: many(children),
@@ -110,6 +120,8 @@ export const usersRelations = relations(users, ({ many }) => ({
     relationName: "institutionConnections",
   }),
   cuidotecas: many(cuidotecas),
+  sentMessages: many(messages, { relationName: "sentMessages" }),
+  receivedMessages: many(messages, { relationName: "receivedMessages" }),
 }));
 
 export const childrenRelations = relations(children, ({ one, many }) => ({
@@ -170,6 +182,19 @@ export const cuidotecaEnrollmentsRelations = relations(cuidotecaEnrollments, ({ 
   child: one(children, {
     fields: [cuidotecaEnrollments.childId],
     references: [children.id],
+  }),
+}));
+
+export const messagesRelations = relations(messages, ({ one }) => ({
+  sender: one(users, {
+    fields: [messages.senderId],
+    references: [users.id],
+    relationName: "sentMessages",
+  }),
+  receiver: one(users, {
+    fields: [messages.receiverId],
+    references: [users.id],
+    relationName: "receivedMessages",
   }),
 }));
 
@@ -246,6 +271,12 @@ export const insertCuidadorEnrollmentSchema = createInsertSchema(cuidadorEnrollm
   enrollmentDate: true,
 });
 
+export const insertMessageSchema = createInsertSchema(messages).omit({
+  id: true,
+  read: true,
+  createdAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -268,6 +299,8 @@ export type CuidotecaEnrollment = typeof cuidotecaEnrollments.$inferSelect;
 export type InsertCuidotecaEnrollment = z.infer<typeof insertCuidotecaEnrollmentSchema>;
 export type CuidadorEnrollment = typeof cuidadorEnrollments.$inferSelect;
 export type InsertCuidadorEnrollment = z.infer<typeof insertCuidadorEnrollmentSchema>;
+export type Message = typeof messages.$inferSelect;
+export type InsertMessage = z.infer<typeof insertMessageSchema>;
 
 // Extended types for queries with relations
 export type UserWithChildren = User & {

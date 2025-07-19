@@ -44,6 +44,12 @@ export default function Header() {
                 Comunidade
               </Button>
               <Button
+                variant={location === "/messages" ? "default" : "ghost"}
+                onClick={() => setLocation("/messages")}
+              >
+                Mensagens
+              </Button>
+              <Button
                 variant={location === "/institutions" ? "default" : "ghost"}
                 onClick={() => setLocation("/institutions")}
               >

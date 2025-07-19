@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Building, Users, GraduationCap, ArrowLeft, Mail, Phone, MapPin } from "lucide-react";
+import { Building, Users, GraduationCap, ArrowLeft, Mail, Phone, MapPin, UserCheck } from "lucide-react";
 import CuidotecasSection from "@/components/institution/cuidotecas-section";
 
 interface Institution {
@@ -183,9 +183,11 @@ export default function InstitutionProfile() {
                   <p className="text-muted-foreground">Coordenado por {institution.name}</p>
                 </div>
               </div>
-              <Badge variant="secondary" className="text-sm">
-                {institution.connectionCount || 0} estudantes conectados
-              </Badge>
+              <div className="flex items-center space-x-2">
+                <Badge variant="secondary" className="text-sm">
+                  {(connectedStudents.length + connectedCuidadores.length)} pessoas conectadas
+                </Badge>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
@@ -197,9 +199,43 @@ export default function InstitutionProfile() {
                   <span>{institution.email}</span>
                 </div>
                 
-                <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                  <Users className="h-4 w-4" />
-                  <span>{institution.connectionCount || 0} estudantes conectados</span>
+                {/* Connection Statistics */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
+                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                    <div className="flex items-center space-x-2">
+                      <UserCheck className="h-5 w-5 text-blue-600" />
+                      <div>
+                        <p className="text-sm font-medium text-blue-900">Total Conectados</p>
+                        <p className="text-2xl font-bold text-blue-600">
+                          {connectedStudents.length + connectedCuidadores.length}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                    <div className="flex items-center space-x-2">
+                      <Users className="h-5 w-5 text-green-600" />
+                      <div>
+                        <p className="text-sm font-medium text-green-900">Estudantes</p>
+                        <p className="text-2xl font-bold text-green-600">
+                          {connectedStudents.length}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                    <div className="flex items-center space-x-2">
+                      <GraduationCap className="h-5 w-5 text-purple-600" />
+                      <div>
+                        <p className="text-sm font-medium text-purple-900">Cuidadores</p>
+                        <p className="text-2xl font-bold text-purple-600">
+                          {connectedCuidadores.length}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 

@@ -18,6 +18,7 @@ export default function Profile() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
+  const [profilePicturePreview, setProfilePicturePreview] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: user?.name || "",
     email: user?.email || "",
@@ -48,6 +49,40 @@ export default function Profile() {
       });
     },
   });
+
+  const uploadProfilePictureMutation = useMutation({
+    mutationFn: async (profilePictureData: string) => {
+      return await apiRequest("POST", "/api/users/profile-picture", { profilePictureData });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users/me"] });
+      setProfilePicturePreview(null);
+      toast({
+        title: "Foto de perfil atualizada",
+        description: "Sua foto de perfil foi atualizada com sucesso",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erro ao atualizar",
+        description: "Não foi possível atualizar sua foto de perfil",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleProfilePictureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        setProfilePicturePreview(result);
+        uploadProfilePictureMutation.mutate(result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,8 +132,29 @@ export default function Profile() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
-                  <User className="h-6 w-6 text-white" />
+                <div className="relative">
+                  <Avatar className="w-16 h-16">
+                    {profilePicturePreview || user?.profilePicture ? (
+                      <AvatarImage src={profilePicturePreview || user?.profilePicture || ""} />
+                    ) : (
+                      <AvatarFallback>
+                        <User className="h-8 w-8" />
+                      </AvatarFallback>
+                    )}
+                  </Avatar>
+                  <label
+                    htmlFor="profile-picture"
+                    className="absolute bottom-0 right-0 bg-primary text-primary-foreground rounded-full p-1 cursor-pointer hover:bg-primary/90"
+                  >
+                    <Camera className="h-3 w-3" />
+                  </label>
+                  <input
+                    id="profile-picture"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleProfilePictureChange}
+                    className="hidden"
+                  />
                 </div>
                 <div>
                   <CardTitle className="text-2xl">Meu Perfil</CardTitle>

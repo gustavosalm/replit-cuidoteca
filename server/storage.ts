@@ -8,6 +8,7 @@ import {
   cuidotecas,
   cuidotecaEnrollments,
   cuidadorEnrollments,
+  messages,
   type User, 
   type InsertUser,
   type Child,
@@ -26,6 +27,8 @@ import {
   type InsertCuidotecaEnrollment,
   type CuidadorEnrollment,
   type InsertCuidadorEnrollment,
+  type Message,
+  type InsertMessage,
   type UserWithChildren,
   type ChildWithSchedules,
   type PostWithAuthor,
@@ -111,6 +114,15 @@ export interface IStorage {
   // Additional enrollment operations
   getEnrollmentDetails(id: number): Promise<any>;
   cancelEnrollment(id: number): Promise<void>;
+
+  // Profile picture operations
+  updateUserProfilePicture(id: number, profilePictureData: string): Promise<User>;
+  
+  // Message operations
+  getMessages(userId: number, otherUserId: number): Promise<Message[]>;
+  sendMessage(message: InsertMessage): Promise<Message>;
+  markMessageAsRead(messageId: number): Promise<void>;
+  getUserConversations(userId: number): Promise<any[]>;
 
   // Admin operations
   getAdminStats(): Promise<{
@@ -858,6 +870,103 @@ export class DatabaseStorage implements IStorage {
       todaySchedules: schedulesCount?.count || 0,
       waitingList: pendingCount?.count || 0,
     };
+  }
+
+  // Profile picture operations
+  async updateUserProfilePicture(id: number, profilePictureData: string): Promise<User> {
+    const [updatedUser] = await db
+      .update(users)
+      .set({ profilePicture: profilePictureData })
+      .where(eq(users.id, id))
+      .returning();
+    
+    return updatedUser;
+  }
+
+  // Message operations
+  async getMessages(userId: number, otherUserId: number): Promise<Message[]> {
+    const result = await db
+      .select()
+      .from(messages)
+      .where(
+        and(
+          eq(messages.senderId, userId),
+          eq(messages.receiverId, otherUserId)
+        )
+      )
+      .union(
+        db
+          .select()
+          .from(messages)
+          .where(
+            and(
+              eq(messages.senderId, otherUserId),
+              eq(messages.receiverId, userId)
+            )
+          )
+      )
+      .orderBy(messages.createdAt);
+    
+    return result;
+  }
+
+  async sendMessage(message: InsertMessage): Promise<Message> {
+    const [newMessage] = await db
+      .insert(messages)
+      .values(message)
+      .returning();
+    
+    return newMessage;
+  }
+
+  async markMessageAsRead(messageId: number): Promise<void> {
+    await db
+      .update(messages)
+      .set({ read: true })
+      .where(eq(messages.id, messageId));
+  }
+
+  async getUserConversations(userId: number): Promise<any[]> {
+    // Get all unique conversations for this user
+    const result = await db
+      .select({
+        otherUserId: messages.senderId,
+        otherUserName: users.name,
+        otherUserProfilePicture: users.profilePicture,
+        lastMessage: messages.content,
+        lastMessageDate: messages.createdAt,
+        unreadCount: messages.read,
+      })
+      .from(messages)
+      .innerJoin(users, eq(messages.senderId, users.id))
+      .where(eq(messages.receiverId, userId))
+      .union(
+        db
+          .select({
+            otherUserId: messages.receiverId,
+            otherUserName: users.name,
+            otherUserProfilePicture: users.profilePicture,
+            lastMessage: messages.content,
+            lastMessageDate: messages.createdAt,
+            unreadCount: messages.read,
+          })
+          .from(messages)
+          .innerJoin(users, eq(messages.receiverId, users.id))
+          .where(eq(messages.senderId, userId))
+      )
+      .orderBy(desc(messages.createdAt));
+    
+    // Group by other user and get most recent conversation
+    const conversationsMap = new Map();
+    
+    result.forEach((row) => {
+      if (!conversationsMap.has(row.otherUserId) || 
+          row.lastMessageDate > conversationsMap.get(row.otherUserId).lastMessageDate) {
+        conversationsMap.set(row.otherUserId, row);
+      }
+    });
+    
+    return Array.from(conversationsMap.values());
   }
 }
 
