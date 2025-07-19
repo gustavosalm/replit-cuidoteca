@@ -44,9 +44,7 @@ export default function Institutions() {
 
   const connectMutation = useMutation({
     mutationFn: (institutionId: number) =>
-      apiRequest(`/api/institutions/${institutionId}/connect`, {
-        method: "POST",
-      }),
+      apiRequest("POST", `/api/institutions/${institutionId}/connect`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/institutions"] });
       queryClient.invalidateQueries({ queryKey: ["/api/users/connections"] });
@@ -66,9 +64,7 @@ export default function Institutions() {
 
   const disconnectMutation = useMutation({
     mutationFn: (institutionId: number) =>
-      apiRequest(`/api/institutions/${institutionId}/connect`, {
-        method: "DELETE",
-      }),
+      apiRequest("DELETE", `/api/institutions/${institutionId}/connect`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/institutions"] });
       queryClient.invalidateQueries({ queryKey: ["/api/users/connections"] });

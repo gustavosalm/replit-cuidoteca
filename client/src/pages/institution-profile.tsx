@@ -58,9 +58,7 @@ export default function InstitutionProfile() {
 
   const connectMutation = useMutation({
     mutationFn: () =>
-      apiRequest(`/api/institutions/${id}/connect`, {
-        method: "POST",
-      }),
+      apiRequest("POST", `/api/institutions/${id}/connect`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/institutions", id] });
       queryClient.invalidateQueries({ queryKey: ["/api/institutions", id, "connections"] });
