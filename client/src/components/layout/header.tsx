@@ -17,9 +17,9 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
-            <div className="flex-shrink-0 flex items-center">
+            <div className="flex-shrink-0 flex items-center cursor-pointer" onClick={() => setLocation("/")}>
               <Heart className="h-8 w-8 text-accent mr-3" />
-              <h1 className="text-xl font-semibold text-foreground">Cuidoteca</h1>
+              <h1 className="text-xl font-semibold text-foreground hover:text-accent transition-colors">Cuidoteca</h1>
             </div>
           </div>
           

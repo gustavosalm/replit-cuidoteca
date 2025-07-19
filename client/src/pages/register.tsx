@@ -109,9 +109,9 @@ export default function Register() {
     <div className="min-h-screen bg-neutral flex items-center justify-center p-4">
       <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <CardHeader className="flex flex-row items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Heart className="h-6 w-6 text-accent" />
-            <CardTitle className="text-xl">
+          <div className="flex items-center space-x-2 cursor-pointer" onClick={() => setLocation("/")}>
+            <Heart className="h-6 w-6 text-accent hover:scale-110 transition-transform" />
+            <CardTitle className="text-xl hover:text-accent transition-colors">
               {userType === "institution" ? "Cadastro de Instituição" : "Cadastro de Responsável"}
             </CardTitle>
           </div>
