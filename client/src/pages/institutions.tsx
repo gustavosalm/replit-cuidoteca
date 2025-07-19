@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,6 +29,7 @@ export default function Institutions() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
 
   const { data: institutions = [], isLoading: loadingInstitutions } = useQuery({
@@ -142,12 +144,15 @@ export default function Institutions() {
             <Card key={institution.id} className="hover:shadow-lg transition-shadow">
               <CardHeader>
                 <div className="flex items-start justify-between">
-                  <div className="flex items-center space-x-3">
+                  <div 
+                    className="flex items-center space-x-3 cursor-pointer flex-1"
+                    onClick={() => setLocation(`/institutions/${institution.id}`)}
+                  >
                     <div className="bg-accent/10 p-2 rounded-lg">
                       <Building className="h-6 w-6 text-accent" />
                     </div>
                     <div className="flex-1">
-                      <CardTitle className="text-lg line-clamp-2">
+                      <CardTitle className="text-lg line-clamp-2 hover:text-accent transition-colors">
                         {institution.institutionName}
                       </CardTitle>
                       <p className="text-sm text-muted-foreground">
@@ -164,28 +169,42 @@ export default function Institutions() {
                     <span>{institution.connectionCount || 0} pessoas conectadas</span>
                   </div>
                   
-                  <div className="pt-2">
-                    {isConnected(institution.id) ? (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full"
-                        onClick={() => disconnectMutation.mutate(institution.id)}
-                        disabled={disconnectMutation.isPending}
-                      >
-                        <Check className="h-4 w-4 mr-2" />
-                        {disconnectMutation.isPending ? "Desconectando..." : "Conectado"}
-                      </Button>
-                    ) : (
-                      <Button
-                        size="sm"
-                        className="w-full"
-                        onClick={() => connectMutation.mutate(institution.id)}
-                        disabled={connectMutation.isPending}
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        {connectMutation.isPending ? "Conectando..." : "Conectar"}
-                      </Button>
+                  <div className="pt-2 flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => setLocation(`/institutions/${institution.id}`)}
+                    >
+                      Ver Perfil
+                    </Button>
+                    {user?.role === "parent" && (
+                      <>
+                        {isConnected(institution.id) ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              disconnectMutation.mutate(institution.id);
+                            }}
+                            disabled={disconnectMutation.isPending}
+                          >
+                            <Check className="h-4 w-4" />
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              connectMutation.mutate(institution.id);
+                            }}
+                            disabled={connectMutation.isPending}
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>

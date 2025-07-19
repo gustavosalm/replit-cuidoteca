@@ -132,6 +132,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/users/public/:id', authenticateToken, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const user = await storage.getPublicUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      
+      res.json(user);
+    } catch (error) {
+      console.error('Get public user error:', error);
+      res.status(500).json({ message: 'Failed to get user' });
+    }
+  });
+
   // Children routes
   app.get('/api/children', authenticateToken, async (req, res) => {
     try {
@@ -363,6 +379,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Get institution error:', error);
       res.status(500).json({ message: 'Failed to get institution' });
+    }
+  });
+
+  app.get('/api/institutions/:id/connections', authenticateToken, async (req, res) => {
+    try {
+      const institutionId = parseInt(req.params.id);
+      const connectedUsers = await storage.getInstitutionConnectedUsers(institutionId);
+      res.json(connectedUsers);
+    } catch (error) {
+      console.error('Get institution connections error:', error);
+      res.status(500).json({ message: 'Failed to get institution connections' });
     }
   });
 

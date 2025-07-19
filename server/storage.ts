@@ -30,6 +30,7 @@ export interface IStorage {
   // User operations
   getUser(id: number): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
+  getPublicUser(id: number): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, user: Partial<InsertUser>): Promise<User>;
   getUserWithChildren(id: number): Promise<UserWithChildren | undefined>;
@@ -66,6 +67,7 @@ export interface IStorage {
   // University connection operations
   getInstitutions(): Promise<InstitutionWithConnections[]>;
   getInstitutionById(id: number): Promise<InstitutionWithConnections | undefined>;
+  getInstitutionConnectedUsers(institutionId: number): Promise<User[]>;
   connectToInstitution(userId: number, institutionId: number): Promise<UniversityConnection>;
   disconnectFromInstitution(userId: number, institutionId: number): Promise<void>;
   getUserConnections(userId: number): Promise<UniversityConnection[]>;
@@ -87,6 +89,23 @@ export class DatabaseStorage implements IStorage {
 
   async getUserByEmail(email: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user || undefined;
+  }
+
+  async getPublicUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+      phone: users.phone,
+      universityId: users.universityId,
+      course: users.course,
+      semester: users.semester,
+      address: users.address,
+      role: users.role,
+      institutionName: users.institutionName,
+      // Exclude sensitive fields like password
+    }).from(users).where(eq(users.id, id));
     return user || undefined;
   }
 
@@ -279,6 +298,17 @@ export class DatabaseStorage implements IStorage {
       ...institution,
       connectionCount: institution.institutionConnections.length,
     };
+  }
+
+  async getInstitutionConnectedUsers(institutionId: number): Promise<User[]> {
+    const connections = await db.query.universityConnections.findMany({
+      where: eq(universityConnections.institutionId, institutionId),
+      with: {
+        user: true,
+      },
+    });
+
+    return connections.map(connection => connection.user);
   }
 
   async connectToInstitution(userId: number, institutionId: number): Promise<UniversityConnection> {
