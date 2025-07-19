@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Building, Users, Search, Plus, Check } from "lucide-react";
+import { Building, Users, Search, Plus, Check, Home } from "lucide-react";
 
 interface Institution {
   id: number;
@@ -118,9 +118,19 @@ export default function Institutions() {
               Conecte-se às instituições de ensino da sua região
             </p>
           </div>
-          <Badge variant="secondary" className="text-sm">
-            {institutions.length} Instituições Disponíveis
-          </Badge>
+          <div className="flex items-center space-x-3">
+            <Badge variant="secondary" className="text-sm">
+              {institutions.length} Instituições Disponíveis
+            </Badge>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setLocation("/")}
+            >
+              <Home className="h-4 w-4 mr-2" />
+              Dashboard
+            </Button>
+          </div>
         </div>
 
         {/* Search */}
