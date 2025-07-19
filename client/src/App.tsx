@@ -11,6 +11,7 @@ import Admin from "@/pages/admin";
 import Community from "@/pages/community";
 import Scheduling from "@/pages/scheduling";
 import Profile from "@/pages/profile";
+import Institutions from "@/pages/institutions";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -23,6 +24,7 @@ function Router() {
       <Route path="/community" component={Community} />
       <Route path="/scheduling" component={Scheduling} />
       <Route path="/profile" component={Profile} />
+      <Route path="/institutions" component={Institutions} />
       <Route component={NotFound} />
     </Switch>
   );

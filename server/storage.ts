@@ -4,6 +4,7 @@ import {
   schedules, 
   posts, 
   notifications,
+  universityConnections,
   type User, 
   type InsertUser,
   type Child,
@@ -14,10 +15,13 @@ import {
   type InsertPost,
   type Notification,
   type InsertNotification,
+  type UniversityConnection,
+  type InsertUniversityConnection,
   type UserWithChildren,
   type ChildWithSchedules,
   type PostWithAuthor,
   type ScheduleWithChild,
+  type InstitutionWithConnections,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
@@ -58,6 +62,13 @@ export interface IStorage {
   getNotificationsByUser(userId: number): Promise<Notification[]>;
   createNotification(notification: InsertNotification): Promise<Notification>;
   markNotificationAsRead(id: number): Promise<void>;
+  
+  // University connection operations
+  getInstitutions(): Promise<InstitutionWithConnections[]>;
+  getInstitutionById(id: number): Promise<InstitutionWithConnections | undefined>;
+  connectToInstitution(userId: number, institutionId: number): Promise<UniversityConnection>;
+  disconnectFromInstitution(userId: number, institutionId: number): Promise<void>;
+  getUserConnections(userId: number): Promise<UniversityConnection[]>;
   
   // Admin operations
   getAdminStats(): Promise<{
@@ -150,11 +161,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getSchedulesByParent(parentId: number): Promise<ScheduleWithChild[]> {
+    const childrenOfParent = await db.select({ id: children.id }).from(children).where(eq(children.parentId, parentId));
+    const childIds = childrenOfParent.map(child => child.id);
+    
+    if (childIds.length === 0) {
+      return [];
+    }
+    
     return await db.query.schedules.findMany({
       with: {
         child: true,
       },
-      where: eq(children.parentId, parentId),
+      where: (schedules, { inArray }) => inArray(schedules.childId, childIds),
     });
   }
 
@@ -231,6 +249,62 @@ export class DatabaseStorage implements IStorage {
       .update(notifications)
       .set({ read: true })
       .where(eq(notifications.id, id));
+  }
+
+  async getInstitutions(): Promise<InstitutionWithConnections[]> {
+    const institutions = await db.query.users.findMany({
+      where: eq(users.role, "institution"),
+      with: {
+        universityConnections: true,
+      },
+    });
+
+    return institutions.map(institution => ({
+      ...institution,
+      connectionCount: institution.universityConnections.length,
+    }));
+  }
+
+  async getInstitutionById(id: number): Promise<InstitutionWithConnections | undefined> {
+    const institution = await db.query.users.findFirst({
+      where: and(eq(users.id, id), eq(users.role, "institution")),
+      with: {
+        universityConnections: true,
+      },
+    });
+
+    if (!institution) return undefined;
+
+    return {
+      ...institution,
+      connectionCount: institution.universityConnections.length,
+    };
+  }
+
+  async connectToInstitution(userId: number, institutionId: number): Promise<UniversityConnection> {
+    const [connection] = await db
+      .insert(universityConnections)
+      .values({ userId, institutionId })
+      .returning();
+    return connection;
+  }
+
+  async disconnectFromInstitution(userId: number, institutionId: number): Promise<void> {
+    await db
+      .delete(universityConnections)
+      .where(
+        and(
+          eq(universityConnections.userId, userId),
+          eq(universityConnections.institutionId, institutionId)
+        )
+      );
+  }
+
+  async getUserConnections(userId: number): Promise<UniversityConnection[]> {
+    return await db
+      .select()
+      .from(universityConnections)
+      .where(eq(universityConnections.userId, userId));
   }
 
   async getAdminStats(): Promise<{

@@ -1,6 +1,6 @@
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Home, Calendar, Users, User } from "lucide-react";
+import { Home, Calendar, Users, User, Building } from "lucide-react";
 
 export default function MobileNav() {
   const [location, setLocation] = useLocation();
@@ -9,12 +9,13 @@ export default function MobileNav() {
     { path: "/", icon: Home, label: "Início" },
     { path: "/scheduling", icon: Calendar, label: "Agenda" },
     { path: "/community", icon: Users, label: "Comunidade" },
+    { path: "/institutions", icon: Building, label: "Universidades" },
     { path: "/profile", icon: User, label: "Perfil" },
   ];
 
   return (
     <div className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border z-40">
-      <div className="grid grid-cols-4 gap-1">
+      <div className="grid grid-cols-5 gap-1">
         {navItems.map((item) => (
           <Button
             key={item.path}

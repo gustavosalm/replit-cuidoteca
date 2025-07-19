@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { insertUserSchema, insertChildSchema, insertScheduleSchema, insertPostSchema, insertNotificationSchema } from "@shared/schema";
+import { insertUserSchema, insertParentSchema, insertInstitutionSchema, insertChildSchema, insertScheduleSchema, insertPostSchema, insertNotificationSchema } from "@shared/schema";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
@@ -37,7 +37,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.post('/api/auth/register', async (req, res) => {
     try {
-      const userData = insertUserSchema.parse(req.body);
+      const { role } = req.body;
+      
+      // Validate based on role type
+      let userData;
+      if (role === 'institution') {
+        userData = insertInstitutionSchema.parse(req.body);
+      } else {
+        userData = insertParentSchema.parse(req.body);
+      }
       
       // Check if user already exists
       const existingUser = await storage.getUserByEmail(userData.email);
@@ -328,6 +336,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Mark notification as read error:', error);
       res.status(500).json({ message: 'Failed to mark notification as read' });
+    }
+  });
+
+  // Institutions routes
+  app.get('/api/institutions', authenticateToken, async (req, res) => {
+    try {
+      const institutions = await storage.getInstitutions();
+      res.json(institutions);
+    } catch (error) {
+      console.error('Get institutions error:', error);
+      res.status(500).json({ message: 'Failed to get institutions' });
+    }
+  });
+
+  app.get('/api/institutions/:id', authenticateToken, async (req, res) => {
+    try {
+      const institutionId = parseInt(req.params.id);
+      const institution = await storage.getInstitutionById(institutionId);
+      
+      if (!institution) {
+        return res.status(404).json({ message: 'Institution not found' });
+      }
+      
+      res.json(institution);
+    } catch (error) {
+      console.error('Get institution error:', error);
+      res.status(500).json({ message: 'Failed to get institution' });
+    }
+  });
+
+  app.post('/api/institutions/:id/connect', authenticateToken, async (req, res) => {
+    try {
+      const institutionId = parseInt(req.params.id);
+      const userId = req.user.id;
+      
+      // Check if institution exists
+      const institution = await storage.getInstitutionById(institutionId);
+      if (!institution) {
+        return res.status(404).json({ message: 'Institution not found' });
+      }
+      
+      // Check if already connected
+      const existingConnections = await storage.getUserConnections(userId);
+      const alreadyConnected = existingConnections.some(conn => conn.institutionId === institutionId);
+      
+      if (alreadyConnected) {
+        return res.status(400).json({ message: 'Already connected to this institution' });
+      }
+      
+      const connection = await storage.connectToInstitution(userId, institutionId);
+      res.status(201).json(connection);
+    } catch (error) {
+      console.error('Connect to institution error:', error);
+      res.status(500).json({ message: 'Failed to connect to institution' });
+    }
+  });
+
+  app.delete('/api/institutions/:id/connect', authenticateToken, async (req, res) => {
+    try {
+      const institutionId = parseInt(req.params.id);
+      const userId = req.user.id;
+      
+      await storage.disconnectFromInstitution(userId, institutionId);
+      res.status(204).send();
+    } catch (error) {
+      console.error('Disconnect from institution error:', error);
+      res.status(500).json({ message: 'Failed to disconnect from institution' });
+    }
+  });
+
+  app.get('/api/users/connections', authenticateToken, async (req, res) => {
+    try {
+      const connections = await storage.getUserConnections(req.user.id);
+      res.json(connections);
+    } catch (error) {
+      console.error('Get user connections error:', error);
+      res.status(500).json({ message: 'Failed to get user connections' });
     }
   });
 

@@ -8,13 +8,14 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { X, Heart } from "lucide-react";
+import { X, Heart, Building } from "lucide-react";
 
 export default function Register() {
   const [, setLocation] = useLocation();
   const { register } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [userType, setUserType] = useState<"parent" | "institution">("parent");
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -26,6 +27,7 @@ export default function Register() {
     password: "",
     confirmPassword: "",
     agreeToTerms: false,
+    institutionName: "",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -52,22 +54,45 @@ export default function Register() {
       return;
     }
 
+    if (userType === "institution" && !formData.institutionName.trim()) {
+      toast({
+        title: "Nome da instituição obrigatório",
+        description: "Por favor, preencha o nome oficial da instituição",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      await register({
+      const baseData = {
         name: formData.name,
         email: formData.email,
-        phone: formData.phone,
-        universityId: formData.universityId,
-        course: formData.course,
-        semester: formData.semester,
-        address: formData.address,
         password: formData.password,
-        role: "parent",
-      });
+        role: userType,
+      };
+
+      const registrationData = userType === "institution" 
+        ? {
+            ...baseData,
+            institutionName: formData.institutionName,
+          }
+        : {
+            ...baseData,
+            phone: formData.phone,
+            universityId: formData.universityId,
+            course: formData.course,
+            semester: formData.semester,
+            address: formData.address,
+          };
+
+      await register(registrationData);
       setLocation("/");
       toast({
         title: "Cadastro realizado com sucesso!",
-        description: "Bem-vinda à Cuidoteca",
+        description: userType === "institution" 
+          ? "Instituição cadastrada com sucesso!" 
+          : "Bem-vinda à Cuidoteca",
       });
     } catch (error) {
       toast({
@@ -86,7 +111,9 @@ export default function Register() {
         <CardHeader className="flex flex-row items-center justify-between">
           <div className="flex items-center space-x-2">
             <Heart className="h-6 w-6 text-accent" />
-            <CardTitle className="text-xl">Cadastro de Responsável</CardTitle>
+            <CardTitle className="text-xl">
+              {userType === "institution" ? "Cadastro de Instituição" : "Cadastro de Responsável"}
+            </CardTitle>
           </div>
           <Button
             variant="ghost"
@@ -98,12 +125,40 @@ export default function Register() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* User Type Selection */}
+            <div className="space-y-4">
+              <Label>Tipo de Perfil</Label>
+              <div className="grid grid-cols-2 gap-4">
+                <Button
+                  type="button"
+                  variant={userType === "parent" ? "default" : "outline"}
+                  onClick={() => setUserType("parent")}
+                  className="h-16 flex-col"
+                >
+                  <Heart className="h-6 w-6 mb-2" />
+                  Responsável
+                </Button>
+                <Button
+                  type="button"
+                  variant={userType === "institution" ? "default" : "outline"}
+                  onClick={() => setUserType("institution")}
+                  className="h-16 flex-col"
+                >
+                  <Building className="h-6 w-6 mb-2" />
+                  Instituição
+                </Button>
+              </div>
+            </div>
+            
+            {/* Common Fields */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Nome Completo</Label>
+                <Label htmlFor="name">
+                  {userType === "institution" ? "Nome da Instituição" : "Nome Completo"}
+                </Label>
                 <Input
                   id="name"
-                  placeholder="Seu nome completo"
+                  placeholder={userType === "institution" ? "Nome da instituição" : "Seu nome completo"}
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
@@ -114,77 +169,96 @@ export default function Register() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="seu.email@universidade.edu"
+                  placeholder={userType === "institution" ? "contato@instituicao.edu" : "seu.email@universidade.edu"}
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   required
                 />
               </div>
             </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            {/* Institution-specific fields */}
+            {userType === "institution" && (
               <div className="space-y-2">
-                <Label htmlFor="phone">Telefone</Label>
+                <Label htmlFor="institutionName">Nome Oficial da Instituição</Label>
                 <Input
-                  id="phone"
-                  type="tel"
-                  placeholder="(11) 99999-9999"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  id="institutionName"
+                  placeholder="Ex: Universidade de São Paulo"
+                  value={formData.institutionName}
+                  onChange={(e) => setFormData({ ...formData, institutionName: e.target.value })}
+                  required
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="universityId">ID/Matrícula Universidade</Label>
-                <Input
-                  id="universityId"
-                  placeholder="Seu ID da universidade"
-                  value={formData.universityId}
-                  onChange={(e) => setFormData({ ...formData, universityId: e.target.value })}
-                />
-              </div>
-            </div>
+            )}
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="course">Curso</Label>
-                <Input
-                  id="course"
-                  placeholder="Nome do seu curso"
-                  value={formData.course}
-                  onChange={(e) => setFormData({ ...formData, course: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="semester">Semestre</Label>
-                <Select value={formData.semester} onValueChange={(value) => setFormData({ ...formData, semester: value })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o semestre" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">1º Semestre</SelectItem>
-                    <SelectItem value="2">2º Semestre</SelectItem>
-                    <SelectItem value="3">3º Semestre</SelectItem>
-                    <SelectItem value="4">4º Semestre</SelectItem>
-                    <SelectItem value="5">5º Semestre</SelectItem>
-                    <SelectItem value="6">6º Semestre</SelectItem>
-                    <SelectItem value="7">7º Semestre</SelectItem>
-                    <SelectItem value="8">8º Semestre</SelectItem>
-                    <SelectItem value="9">9º Semestre</SelectItem>
-                    <SelectItem value="10">10º Semestre</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="address">Endereço</Label>
-              <Input
-                id="address"
-                placeholder="Seu endereço completo"
-                value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-              />
-            </div>
+            {/* Parent-specific fields */}
+            {userType === "parent" && (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Telefone</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      placeholder="(11) 99999-9999"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="universityId">ID/Matrícula Universidade</Label>
+                    <Input
+                      id="universityId"
+                      placeholder="Seu ID da universidade"
+                      value={formData.universityId}
+                      onChange={(e) => setFormData({ ...formData, universityId: e.target.value })}
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="course">Curso</Label>
+                    <Input
+                      id="course"
+                      placeholder="Nome do seu curso"
+                      value={formData.course}
+                      onChange={(e) => setFormData({ ...formData, course: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="semester">Semestre</Label>
+                    <Select value={formData.semester} onValueChange={(value) => setFormData({ ...formData, semester: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o semestre" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">1º Semestre</SelectItem>
+                        <SelectItem value="2">2º Semestre</SelectItem>
+                        <SelectItem value="3">3º Semestre</SelectItem>
+                        <SelectItem value="4">4º Semestre</SelectItem>
+                        <SelectItem value="5">5º Semestre</SelectItem>
+                        <SelectItem value="6">6º Semestre</SelectItem>
+                        <SelectItem value="7">7º Semestre</SelectItem>
+                        <SelectItem value="8">8º Semestre</SelectItem>
+                        <SelectItem value="9">9º Semestre</SelectItem>
+                        <SelectItem value="10">10º Semestre</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="address">Endereço</Label>
+                  <Input
+                    id="address"
+                    placeholder="Seu endereço completo"
+                    value={formData.address}
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  />
+                </div>
+              </>
+            )}
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">

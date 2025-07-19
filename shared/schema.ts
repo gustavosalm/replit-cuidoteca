@@ -3,7 +3,7 @@ import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const userRoleEnum = pgEnum("user_role", ["parent", "coordinator", "caregiver"]);
+export const userRoleEnum = pgEnum("user_role", ["parent", "coordinator", "caregiver", "institution"]);
 export const scheduleStatusEnum = pgEnum("schedule_status", ["pending", "confirmed", "cancelled"]);
 export const dayOfWeekEnum = pgEnum("day_of_week", ["monday", "tuesday", "wednesday", "thursday", "friday"]);
 export const periodEnum = pgEnum("period", ["morning", "afternoon", "full_day"]);
@@ -19,6 +19,9 @@ export const users = pgTable("users", {
   semester: text("semester"),
   address: text("address"),
   role: userRoleEnum("role").notNull().default("parent"),
+  // Institution-specific fields
+  institutionName: text("institution_name"),
+  memberCount: integer("member_count").default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -57,11 +60,19 @@ export const notifications = pgTable("notifications", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const universityConnections = pgTable("university_connections", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  institutionId: integer("institution_id").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   children: many(children),
   posts: many(posts),
   notifications: many(notifications),
+  universityConnections: many(universityConnections),
 }));
 
 export const childrenRelations = relations(children, ({ one, many }) => ({
@@ -93,10 +104,40 @@ export const notificationsRelations = relations(notifications, ({ one }) => ({
   }),
 }));
 
+export const universityConnectionsRelations = relations(universityConnections, ({ one }) => ({
+  user: one(users, {
+    fields: [universityConnections.userId],
+    references: [users.id],
+  }),
+  institution: one(users, {
+    fields: [universityConnections.institutionId],
+    references: [users.id],
+  }),
+}));
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
+  memberCount: true, // This will be calculated automatically
+});
+
+// Separate schemas for different registration types
+export const insertParentSchema = insertUserSchema.extend({
+  role: z.literal("parent").default("parent"),
+}).omit({
+  institutionName: true, // Parents don't need institution name
+});
+
+export const insertInstitutionSchema = insertUserSchema.extend({
+  role: z.literal("institution").default("institution"),
+  institutionName: z.string().min(1, "Institution name is required"),
+}).omit({
+  universityId: true,
+  course: true,
+  semester: true,
+  phone: true,
+  address: true, // Institutions don't need these personal fields
 });
 
 export const insertChildSchema = createInsertSchema(children).omit({
@@ -121,9 +162,16 @@ export const insertNotificationSchema = createInsertSchema(notifications).omit({
   createdAt: true,
 });
 
+export const insertUniversityConnectionSchema = createInsertSchema(universityConnections).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type InsertParent = z.infer<typeof insertParentSchema>;
+export type InsertInstitution = z.infer<typeof insertInstitutionSchema>;
 export type Child = typeof children.$inferSelect;
 export type InsertChild = z.infer<typeof insertChildSchema>;
 export type Schedule = typeof schedules.$inferSelect;
@@ -132,6 +180,8 @@ export type Post = typeof posts.$inferSelect;
 export type InsertPost = z.infer<typeof insertPostSchema>;
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+export type UniversityConnection = typeof universityConnections.$inferSelect;
+export type InsertUniversityConnection = z.infer<typeof insertUniversityConnectionSchema>;
 
 // Extended types for queries with relations
 export type UserWithChildren = User & {
@@ -148,4 +198,9 @@ export type PostWithAuthor = Post & {
 
 export type ScheduleWithChild = Schedule & {
   child: Child;
+};
+
+export type InstitutionWithConnections = User & {
+  universityConnections: UniversityConnection[];
+  connectionCount?: number;
 };
