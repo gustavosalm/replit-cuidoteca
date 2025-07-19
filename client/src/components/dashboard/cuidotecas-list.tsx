@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { School, Edit, Trash2, Plus, Users, Clock, Calendar } from "lucide-react";
+import { School, Edit, Trash2, Plus, Users, Clock, Calendar, ExternalLink } from "lucide-react";
+import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import CuidotecaModal from "@/components/modals/cuidoteca-modal";
@@ -12,6 +13,7 @@ export default function CuidotecasList() {
   const [editingCuidoteca, setEditingCuidoteca] = useState<any>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
 
   const { data: cuidotecas, isLoading } = useQuery({
     queryKey: ["/api/cuidotecas"],
@@ -122,10 +124,23 @@ export default function CuidotecasList() {
                             <School className="h-5 w-5 text-primary" />
                           </div>
                           <div className="ml-3">
-                            <h4 className="font-medium text-foreground">{cuidoteca.name}</h4>
+                            <h4 
+                              className="font-medium text-foreground cursor-pointer hover:text-primary"
+                              onClick={() => setLocation(`/cuidotecas/${cuidoteca.id}`)}
+                            >
+                              {cuidoteca.name}
+                            </h4>
                           </div>
                         </div>
                         <div className="flex items-center space-x-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setLocation(`/cuidotecas/${cuidoteca.id}`)}
+                            title="Ver detalhes"
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                          </Button>
                           <Button
                             variant="ghost"
                             size="sm"

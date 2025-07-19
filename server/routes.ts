@@ -832,6 +832,90 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get cuidoteca detail
+  app.get('/api/cuidotecas/:id', authenticateToken, async (req, res) => {
+    try {
+      const cuidotecaId = parseInt(req.params.id);
+      if (isNaN(cuidotecaId)) {
+        return res.status(400).json({ message: 'Invalid cuidoteca ID' });
+      }
+
+      const cuidoteca = await storage.getCuidotecaById(cuidotecaId);
+      if (!cuidoteca) {
+        return res.status(404).json({ message: 'Cuidoteca not found' });
+      }
+
+      res.json(cuidoteca);
+    } catch (error) {
+      console.error('Get cuidoteca detail error:', error);
+      res.status(500).json({ message: 'Failed to get cuidoteca details' });
+    }
+  });
+
+  // Get cuidoteca approved cuidadores
+  app.get('/api/cuidotecas/:id/approved-cuidadores', authenticateToken, async (req, res) => {
+    try {
+      const cuidotecaId = parseInt(req.params.id);
+      if (isNaN(cuidotecaId)) {
+        return res.status(400).json({ message: 'Invalid cuidoteca ID' });
+      }
+
+      const cuidadores = await storage.getCuidotecaApprovedCuidadores(cuidotecaId);
+      res.json(cuidadores);
+    } catch (error) {
+      console.error('Get approved cuidadores error:', error);
+      res.status(500).json({ message: 'Failed to get approved cuidadores' });
+    }
+  });
+
+  // Get cuidoteca approved children
+  app.get('/api/cuidotecas/:id/approved-children', authenticateToken, async (req, res) => {
+    try {
+      const cuidotecaId = parseInt(req.params.id);
+      if (isNaN(cuidotecaId)) {
+        return res.status(400).json({ message: 'Invalid cuidoteca ID' });
+      }
+
+      const children = await storage.getCuidotecaApprovedChildren(cuidotecaId);
+      res.json(children);
+    } catch (error) {
+      console.error('Get approved children error:', error);
+      res.status(500).json({ message: 'Failed to get approved children' });
+    }
+  });
+
+  // Get cuidoteca pending children
+  app.get('/api/cuidotecas/:id/pending-children', authenticateToken, async (req, res) => {
+    try {
+      const cuidotecaId = parseInt(req.params.id);
+      if (isNaN(cuidotecaId)) {
+        return res.status(400).json({ message: 'Invalid cuidoteca ID' });
+      }
+
+      const children = await storage.getCuidotecaPendingChildren(cuidotecaId);
+      res.json(children);
+    } catch (error) {
+      console.error('Get pending children error:', error);
+      res.status(500).json({ message: 'Failed to get pending children' });
+    }
+  });
+
+  // Get cuidoteca pending cuidadores
+  app.get('/api/cuidotecas/:id/pending-cuidadores', authenticateToken, async (req, res) => {
+    try {
+      const cuidotecaId = parseInt(req.params.id);
+      if (isNaN(cuidotecaId)) {
+        return res.status(400).json({ message: 'Invalid cuidoteca ID' });
+      }
+
+      const cuidadores = await storage.getCuidotecaPendingCuidadores(cuidotecaId);
+      res.json(cuidadores);
+    } catch (error) {
+      console.error('Get pending cuidadores error:', error);
+      res.status(500).json({ message: 'Failed to get pending cuidadores' });
+    }
+  });
+
   // Get enrolled children for cuidotecas
   app.get('/api/cuidotecas/enrollments', authenticateToken, async (req, res) => {
     try {

@@ -12,8 +12,10 @@ import {
   Clock, 
   Calendar, 
   Users,
-  UserPlus
+  UserPlus,
+  ExternalLink
 } from "lucide-react";
+import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -32,6 +34,7 @@ export default function CuidotecasSection({ institutionId, user }: CuidotecasSec
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
 
   const { data: allCuidotecas = [], isLoading: loadingCuidotecas } = useQuery({
     queryKey: ["/api/cuidotecas"],
@@ -251,19 +254,34 @@ export default function CuidotecasSection({ institutionId, user }: CuidotecasSec
                           <School className="h-5 w-5 text-primary" />
                         </div>
                         <div className="ml-3">
-                          <h4 className="font-medium text-foreground">{cuidoteca.name}</h4>
+                          <h4 
+                            className="font-medium text-foreground cursor-pointer hover:text-primary"
+                            onClick={() => setLocation(`/cuidotecas/${cuidoteca.id}`)}
+                          >
+                            {cuidoteca.name}
+                          </h4>
                         </div>
                       </div>
-                      {(user?.role === 'parent' || user?.role === 'cuidador') && (
-                        <Button 
-                          size="sm" 
-                          onClick={() => handleEnrollClick(cuidoteca)}
-                          disabled={enrollMutation.isPending}
+                      <div className="flex items-center space-x-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setLocation(`/cuidotecas/${cuidoteca.id}`)}
+                          title="Ver detalhes"
                         >
-                          <UserPlus className="h-4 w-4 mr-1" />
-                          {user?.role === 'cuidador' ? 'Inscrever-se' : 'Inscrever'}
+                          <ExternalLink className="h-4 w-4" />
                         </Button>
-                      )}
+                        {(user?.role === 'parent' || user?.role === 'cuidador') && (
+                          <Button 
+                            size="sm" 
+                            onClick={() => handleEnrollClick(cuidoteca)}
+                            disabled={enrollMutation.isPending}
+                          >
+                            <UserPlus className="h-4 w-4 mr-1" />
+                            {user?.role === 'cuidador' ? 'Inscrever-se' : 'Inscrever'}
+                          </Button>
+                        )}
+                      </div>
                     </div>
 
                     <div className="space-y-2 text-sm text-muted-foreground">

@@ -681,6 +681,152 @@ export class DatabaseStorage implements IStorage {
     await db.delete(cuidotecaEnrollments).where(eq(cuidotecaEnrollments.id, id));
   }
 
+  async getCuidotecaById(id: number): Promise<any> {
+    const [cuidoteca] = await db
+      .select({
+        id: cuidotecas.id,
+        name: cuidotecas.name,
+        hours: cuidotecas.hours,
+        institutionId: cuidotecas.institutionId,
+        institution: {
+          id: users.id,
+          name: users.name,
+          institutionName: users.institutionName,
+        },
+      })
+      .from(cuidotecas)
+      .innerJoin(users, eq(cuidotecas.institutionId, users.id))
+      .where(eq(cuidotecas.id, id));
+    
+    return cuidoteca;
+  }
+
+  async getCuidotecaApprovedCuidadores(cuidotecaId: number): Promise<any[]> {
+    const result = await db
+      .select({
+        id: cuidadorEnrollments.id,
+        cuidadorId: cuidadorEnrollments.cuidadorId,
+        status: cuidadorEnrollments.status,
+        requestedDays: cuidadorEnrollments.requestedDays,
+        requestedHours: cuidadorEnrollments.requestedHours,
+        enrollmentDate: cuidadorEnrollments.enrollmentDate,
+        cuidador: {
+          id: users.id,
+          name: users.name,
+          email: users.email,
+          course: users.course,
+          semester: users.semester,
+        },
+      })
+      .from(cuidadorEnrollments)
+      .innerJoin(users, eq(cuidadorEnrollments.cuidadorId, users.id))
+      .where(
+        and(
+          eq(cuidadorEnrollments.cuidotecaId, cuidotecaId),
+          eq(cuidadorEnrollments.status, 'confirmed')
+        )
+      );
+    
+    return result;
+  }
+
+  async getCuidotecaApprovedChildren(cuidotecaId: number): Promise<any[]> {
+    const result = await db
+      .select({
+        id: cuidotecaEnrollments.id,
+        childId: cuidotecaEnrollments.childId,
+        status: cuidotecaEnrollments.status,
+        requestedDays: cuidotecaEnrollments.requestedDays,
+        requestedHours: cuidotecaEnrollments.requestedHours,
+        enrollmentDate: cuidotecaEnrollments.enrollmentDate,
+        child: {
+          id: children.id,
+          name: children.name,
+          age: children.age,
+          specialNeeds: children.specialNeeds,
+        },
+        parent: {
+          id: users.id,
+          name: users.name,
+          email: users.email,
+        },
+      })
+      .from(cuidotecaEnrollments)
+      .innerJoin(children, eq(cuidotecaEnrollments.childId, children.id))
+      .innerJoin(users, eq(children.parentId, users.id))
+      .where(
+        and(
+          eq(cuidotecaEnrollments.cuidotecaId, cuidotecaId),
+          eq(cuidotecaEnrollments.status, 'confirmed')
+        )
+      );
+    
+    return result;
+  }
+
+  async getCuidotecaPendingChildren(cuidotecaId: number): Promise<any[]> {
+    const result = await db
+      .select({
+        id: cuidotecaEnrollments.id,
+        childId: cuidotecaEnrollments.childId,
+        status: cuidotecaEnrollments.status,
+        requestedDays: cuidotecaEnrollments.requestedDays,
+        requestedHours: cuidotecaEnrollments.requestedHours,
+        enrollmentDate: cuidotecaEnrollments.enrollmentDate,
+        child: {
+          id: children.id,
+          name: children.name,
+          age: children.age,
+          specialNeeds: children.specialNeeds,
+        },
+        parent: {
+          id: users.id,
+          name: users.name,
+          email: users.email,
+        },
+      })
+      .from(cuidotecaEnrollments)
+      .innerJoin(children, eq(cuidotecaEnrollments.childId, children.id))
+      .innerJoin(users, eq(children.parentId, users.id))
+      .where(
+        and(
+          eq(cuidotecaEnrollments.cuidotecaId, cuidotecaId),
+          eq(cuidotecaEnrollments.status, 'pending')
+        )
+      );
+    
+    return result;
+  }
+
+  async getCuidotecaPendingCuidadores(cuidotecaId: number): Promise<any[]> {
+    const result = await db
+      .select({
+        id: cuidadorEnrollments.id,
+        cuidadorId: cuidadorEnrollments.cuidadorId,
+        status: cuidadorEnrollments.status,
+        requestedDays: cuidadorEnrollments.requestedDays,
+        requestedHours: cuidadorEnrollments.requestedHours,
+        enrollmentDate: cuidadorEnrollments.enrollmentDate,
+        cuidador: {
+          id: users.id,
+          name: users.name,
+          email: users.email,
+          course: users.course,
+          semester: users.semester,
+        },
+      })
+      .from(cuidadorEnrollments)
+      .innerJoin(users, eq(cuidadorEnrollments.cuidadorId, users.id))
+      .where(
+        and(
+          eq(cuidadorEnrollments.cuidotecaId, cuidotecaId),
+          eq(cuidadorEnrollments.status, 'pending')
+        )
+      );
+    
+    return result;
+  }
+
   async getAdminStats(): Promise<{
     totalFamilies: number;
     activeChildren: number;
