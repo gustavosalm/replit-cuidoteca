@@ -77,6 +77,8 @@ export interface IStorage {
   getInstitutions(): Promise<InstitutionWithConnections[]>;
   getInstitutionById(id: number): Promise<InstitutionWithConnections | undefined>;
   getInstitutionConnectedUsers(institutionId: number): Promise<User[]>;
+  getInstitutionConnectedStudents(institutionId: number): Promise<User[]>;
+  getInstitutionConnectedCuidadores(institutionId: number): Promise<User[]>;
   connectToInstitution(userId: number, institutionId: number): Promise<UniversityConnection>;
   disconnectFromInstitution(userId: number, institutionId: number): Promise<void>;
   getUserConnections(userId: number): Promise<UniversityConnection[]>;
@@ -101,6 +103,14 @@ export interface IStorage {
   // Cuidador enrollment operations
   getCuidadorEnrollments(cuidadorId: number): Promise<any[]>;
   enrollCuidadorInCuidoteca(enrollment: InsertCuidadorEnrollment): Promise<CuidadorEnrollment>;
+  getPendingCuidadorEnrollmentsByInstitution(institutionId: number): Promise<any[]>;
+  updateCuidadorEnrollmentStatus(id: number, status: string): Promise<CuidadorEnrollment>;
+  getCuidadorEnrollmentDetails(id: number): Promise<any>;
+  cancelCuidadorEnrollment(id: number): Promise<void>;
+
+  // Additional enrollment operations
+  getEnrollmentDetails(id: number): Promise<any>;
+  cancelEnrollment(id: number): Promise<void>;
 
   // Admin operations
   getAdminStats(): Promise<{
@@ -339,6 +349,28 @@ export class DatabaseStorage implements IStorage {
     });
 
     return connections.map(connection => connection.user);
+  }
+
+  async getInstitutionConnectedStudents(institutionId: number): Promise<User[]> {
+    const connections = await db.query.universityConnections.findMany({
+      where: eq(universityConnections.institutionId, institutionId),
+      with: {
+        user: true,
+      },
+    });
+
+    return connections.map(connection => connection.user).filter(user => user.role === 'parent');
+  }
+
+  async getInstitutionConnectedCuidadores(institutionId: number): Promise<User[]> {
+    const connections = await db.query.universityConnections.findMany({
+      where: eq(universityConnections.institutionId, institutionId),
+      with: {
+        user: true,
+      },
+    });
+
+    return connections.map(connection => connection.user).filter(user => user.role === 'cuidador');
   }
 
   async connectToInstitution(userId: number, institutionId: number): Promise<UniversityConnection> {
@@ -583,6 +615,70 @@ export class DatabaseStorage implements IStorage {
       .values(enrollment)
       .returning();
     return newEnrollment;
+  }
+
+  async getPendingCuidadorEnrollmentsByInstitution(institutionId: number): Promise<any[]> {
+    const result = await db
+      .select({
+        id: cuidadorEnrollments.id,
+        status: cuidadorEnrollments.status,
+        requestedDays: cuidadorEnrollments.requestedDays,
+        requestedHours: cuidadorEnrollments.requestedHours,
+        enrollmentDate: cuidadorEnrollments.enrollmentDate,
+        cuidador: {
+          id: users.id,
+          name: users.name,
+          email: users.email,
+          course: users.course,
+          semester: users.semester,
+        },
+        cuidoteca: {
+          id: cuidotecas.id,
+          name: cuidotecas.name,
+          hours: cuidotecas.hours,
+        },
+      })
+      .from(cuidadorEnrollments)
+      .innerJoin(users, eq(cuidadorEnrollments.cuidadorId, users.id))
+      .innerJoin(cuidotecas, eq(cuidadorEnrollments.cuidotecaId, cuidotecas.id))
+      .where(
+        and(
+          eq(cuidadorEnrollments.status, 'pending'),
+          eq(cuidotecas.institutionId, institutionId)
+        )
+      );
+    
+    return result;
+  }
+
+  async updateCuidadorEnrollmentStatus(id: number, status: string): Promise<CuidadorEnrollment> {
+    const [enrollment] = await db
+      .update(cuidadorEnrollments)
+      .set({ status: status as any })
+      .where(eq(cuidadorEnrollments.id, id))
+      .returning();
+    return enrollment;
+  }
+
+  async getCuidadorEnrollmentDetails(id: number): Promise<any> {
+    const [result] = await db
+      .select({
+        cuidadorId: cuidadorEnrollments.cuidadorId,
+        cuidotecaName: cuidotecas.name,
+      })
+      .from(cuidadorEnrollments)
+      .innerJoin(cuidotecas, eq(cuidadorEnrollments.cuidotecaId, cuidotecas.id))
+      .where(eq(cuidadorEnrollments.id, id));
+    
+    return result;
+  }
+
+  async cancelCuidadorEnrollment(id: number): Promise<void> {
+    await db.delete(cuidadorEnrollments).where(eq(cuidadorEnrollments.id, id));
+  }
+
+  async cancelEnrollment(id: number): Promise<void> {
+    await db.delete(cuidotecaEnrollments).where(eq(cuidotecaEnrollments.id, id));
   }
 
   async getAdminStats(): Promise<{

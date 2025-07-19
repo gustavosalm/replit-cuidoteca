@@ -395,6 +395,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get connected students (parents) and cuidadores separately
+  app.get('/api/institutions/:id/connected-students', authenticateToken, async (req, res) => {
+    try {
+      const institutionId = parseInt(req.params.id);
+      const connectedStudents = await storage.getInstitutionConnectedStudents(institutionId);
+      res.json(connectedStudents);
+    } catch (error) {
+      console.error('Get connected students error:', error);
+      res.status(500).json({ message: 'Failed to get connected students' });
+    }
+  });
+
+  app.get('/api/institutions/:id/connected-cuidadores', authenticateToken, async (req, res) => {
+    try {
+      const institutionId = parseInt(req.params.id);
+      const connectedCuidadores = await storage.getInstitutionConnectedCuidadores(institutionId);
+      res.json(connectedCuidadores);
+    } catch (error) {
+      console.error('Get connected cuidadores error:', error);
+      res.status(500).json({ message: 'Failed to get connected cuidadores' });
+    }
+  });
+
   app.post('/api/institutions/:id/connect', authenticateToken, async (req, res) => {
     try {
       const institutionId = parseInt(req.params.id);
@@ -657,6 +680,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get pending cuidador enrollments for institutions
+  app.get('/api/enrollments/pending-cuidadores', authenticateToken, async (req, res) => {
+    try {
+      if (req.user.role !== 'institution') {
+        return res.status(403).json({ message: 'Only institutions can view pending cuidador enrollments' });
+      }
+      const enrollments = await storage.getPendingCuidadorEnrollmentsByInstitution(req.user.id);
+      res.json(enrollments);
+    } catch (error) {
+      console.error('Get pending cuidador enrollments error:', error);
+      res.status(500).json({ message: 'Failed to get pending cuidador enrollments' });
+    }
+  });
+
   app.put('/api/enrollments/:id/approve', authenticateToken, async (req, res) => {
     try {
       if (req.user.role !== 'institution') {
@@ -700,6 +737,98 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Reject enrollment error:', error);
       res.status(500).json({ message: 'Failed to reject enrollment' });
+    }
+  });
+
+  // Cuidador enrollment approval/rejection routes
+  app.put('/api/cuidador-enrollments/:id/approve', authenticateToken, async (req, res) => {
+    try {
+      if (req.user.role !== 'institution') {
+        return res.status(403).json({ message: 'Only institutions can approve cuidador enrollments' });
+      }
+      
+      const enrollmentId = parseInt(req.params.id);
+      const enrollment = await storage.updateCuidadorEnrollmentStatus(enrollmentId, 'confirmed');
+      
+      // Create notification for cuidador
+      const enrollmentWithDetails = await storage.getCuidadorEnrollmentDetails(enrollmentId);
+      await storage.createNotification({
+        userId: enrollmentWithDetails.cuidadorId,
+        message: `Sua inscrição na cuidoteca ${enrollmentWithDetails.cuidotecaName} foi aprovada!`
+      });
+      
+      res.json(enrollment);
+    } catch (error) {
+      console.error('Approve cuidador enrollment error:', error);
+      res.status(500).json({ message: 'Failed to approve cuidador enrollment' });
+    }
+  });
+
+  app.put('/api/cuidador-enrollments/:id/reject', authenticateToken, async (req, res) => {
+    try {
+      if (req.user.role !== 'institution') {
+        return res.status(403).json({ message: 'Only institutions can reject cuidador enrollments' });
+      }
+      
+      const enrollmentId = parseInt(req.params.id);
+      const enrollment = await storage.updateCuidadorEnrollmentStatus(enrollmentId, 'cancelled');
+      
+      // Create notification for cuidador
+      const enrollmentWithDetails = await storage.getCuidadorEnrollmentDetails(enrollmentId);
+      await storage.createNotification({
+        userId: enrollmentWithDetails.cuidadorId,
+        message: `Sua inscrição na cuidoteca ${enrollmentWithDetails.cuidotecaName} foi rejeitada.`
+      });
+      
+      res.json(enrollment);
+    } catch (error) {
+      console.error('Reject cuidador enrollment error:', error);
+      res.status(500).json({ message: 'Failed to reject cuidador enrollment' });
+    }
+  });
+
+  // Enrollment cancellation routes
+  app.delete('/api/enrollments/:id/cancel', authenticateToken, async (req, res) => {
+    try {
+      const enrollmentId = parseInt(req.params.id);
+      
+      if (req.user.role === 'parent') {
+        // Verify the enrollment belongs to this parent's child
+        const enrollmentDetails = await storage.getEnrollmentDetails(enrollmentId);
+        if (!enrollmentDetails || enrollmentDetails.parentId !== req.user.id) {
+          return res.status(403).json({ message: 'Unauthorized to cancel this enrollment' });
+        }
+        
+        await storage.cancelEnrollment(enrollmentId);
+        res.status(204).send();
+      } else {
+        return res.status(403).json({ message: 'Only parents can cancel child enrollments' });
+      }
+    } catch (error) {
+      console.error('Cancel enrollment error:', error);
+      res.status(500).json({ message: 'Failed to cancel enrollment' });
+    }
+  });
+
+  app.delete('/api/cuidador-enrollments/:id/cancel', authenticateToken, async (req, res) => {
+    try {
+      const enrollmentId = parseInt(req.params.id);
+      
+      if (req.user.role === 'cuidador') {
+        // Verify the enrollment belongs to this cuidador
+        const enrollmentDetails = await storage.getCuidadorEnrollmentDetails(enrollmentId);
+        if (!enrollmentDetails || enrollmentDetails.cuidadorId !== req.user.id) {
+          return res.status(403).json({ message: 'Unauthorized to cancel this enrollment' });
+        }
+        
+        await storage.cancelCuidadorEnrollment(enrollmentId);
+        res.status(204).send();
+      } else {
+        return res.status(403).json({ message: 'Only cuidadores can cancel their enrollments' });
+      }
+    } catch (error) {
+      console.error('Cancel cuidador enrollment error:', error);
+      res.status(500).json({ message: 'Failed to cancel cuidador enrollment' });
     }
   });
 

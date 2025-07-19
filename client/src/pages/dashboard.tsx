@@ -11,6 +11,7 @@ import CommunityPreview from "@/components/dashboard/community-preview";
 import Notifications from "@/components/dashboard/notifications";
 import CuidotecasList from "@/components/dashboard/cuidotecas-list";
 import PendingEnrollments from "@/components/dashboard/pending-enrollments";
+import PendingCuidadorEnrollments from "@/components/dashboard/pending-cuidador-enrollments";
 import { CuidadorEnrollmentsList } from "@/components/dashboard/cuidador-enrollments-list";
 
 export default function Dashboard() {
@@ -81,6 +82,7 @@ export default function Dashboard() {
         {user.role === 'institution' && (
           <>
             <PendingEnrollments />
+            <PendingCuidadorEnrollments />
             <CuidotecasList />
           </>
         )}

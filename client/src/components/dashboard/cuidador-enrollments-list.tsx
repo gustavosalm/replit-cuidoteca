@@ -1,12 +1,44 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CalendarDays, Clock, MapPin } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { CalendarDays, Clock, MapPin, X } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 export function CuidadorEnrollmentsList() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
   const { data: enrollments = [], isLoading } = useQuery({
     queryKey: ["/api/enrollments/my-cuidador"],
   });
+
+  const cancelMutation = useMutation({
+    mutationFn: async (enrollmentId: number) => {
+      return await apiRequest("DELETE", `/api/cuidador-enrollments/${enrollmentId}/cancel`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/enrollments/my-cuidador"] });
+      toast({
+        title: "Inscrição cancelada",
+        description: "Sua inscrição foi cancelada com sucesso.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Não foi possível cancelar a inscrição.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleCancel = (enrollmentId: number, cuidotecaName: string) => {
+    if (confirm(`Tem certeza que deseja cancelar sua inscrição na cuidoteca "${cuidotecaName}"?`)) {
+      cancelMutation.mutate(enrollmentId);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -63,21 +95,35 @@ export function CuidadorEnrollmentsList() {
                         {enrollment.institution.institutionName || enrollment.institution.name}
                       </p>
                     </div>
-                    <Badge
-                      variant={
-                        enrollment.status === "confirmed"
-                          ? "default"
+                    <div className="flex items-center space-x-2">
+                      <Badge
+                        variant={
+                          enrollment.status === "confirmed"
+                            ? "default"
+                            : enrollment.status === "pending"
+                            ? "secondary"
+                            : "destructive"
+                        }
+                      >
+                        {enrollment.status === "confirmed"
+                          ? "Aprovado"
                           : enrollment.status === "pending"
-                          ? "secondary"
-                          : "destructive"
-                      }
-                    >
-                      {enrollment.status === "confirmed"
-                        ? "Aprovado"
-                        : enrollment.status === "pending"
-                        ? "Aguardando aprovação"
-                        : "Rejeitado"}
-                    </Badge>
+                          ? "Aguardando aprovação"
+                          : "Rejeitado"}
+                      </Badge>
+                      {enrollment.status === "pending" && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-red-600 border-red-200 hover:bg-red-50"
+                          onClick={() => handleCancel(enrollment.id, enrollment.cuidoteca.name)}
+                          disabled={cancelMutation.isPending}
+                        >
+                          <X className="h-3 w-3 mr-1" />
+                          Cancelar
+                        </Button>
+                      )}
+                    </div>
                   </div>
                   
                   <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">

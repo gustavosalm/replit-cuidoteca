@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Baby, Edit, Trash2, Plus, Clock } from "lucide-react";
+import { Baby, Edit, Trash2, Plus, Clock, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import ChildModal from "@/components/modals/child-modal";
@@ -43,6 +43,26 @@ export default function ChildrenList() {
     },
   });
 
+  const cancelEnrollmentMutation = useMutation({
+    mutationFn: async (enrollmentId: number) => {
+      return await apiRequest("DELETE", `/api/enrollments/${enrollmentId}/cancel`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/enrollments/my-children"] });
+      toast({
+        title: "Inscrição cancelada",
+        description: "A inscrição foi cancelada com sucesso.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Não foi possível cancelar a inscrição.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleEdit = (child: any) => {
     setEditingChild(child);
     setIsChildModalOpen(true);
@@ -51,6 +71,12 @@ export default function ChildrenList() {
   const handleDelete = (childId: number) => {
     if (confirm("Tem certeza que deseja remover esta criança?")) {
       deleteMutation.mutate(childId);
+    }
+  };
+
+  const handleCancelEnrollment = (enrollmentId: number, childName: string, cuidotecaName: string) => {
+    if (confirm(`Tem certeza que deseja cancelar a inscrição de ${childName} na cuidoteca "${cuidotecaName}"?`)) {
+      cancelEnrollmentMutation.mutate(enrollmentId);
     }
   };
 
@@ -121,19 +147,32 @@ export default function ChildrenList() {
                       <div className="flex items-center gap-2 mb-1">
                         <h4 className="font-medium text-foreground">{child.name}</h4>
                         {getChildEnrollmentStatus(child.id).map((enrollment: any) => (
-                          <Badge 
-                            key={enrollment.id}
-                            variant={enrollment.status === 'pending' ? 'secondary' : enrollment.status === 'confirmed' ? 'default' : 'destructive'}
-                            className="text-xs"
-                          >
-                            <Clock className="w-3 h-3 mr-1" />
-                            {enrollment.status === 'pending' 
-                              ? `aguardando aprovação para ${enrollment.cuidoteca.name} (${enrollment.institution.institutionName || enrollment.institution.name})`
-                              : enrollment.status === 'confirmed'
-                              ? `matriculado em ${enrollment.cuidoteca.name}`
-                              : `rejeitado em ${enrollment.cuidoteca.name}`
-                            }
-                          </Badge>
+                          <div key={enrollment.id} className="flex items-center gap-1">
+                            <Badge 
+                              variant={enrollment.status === 'pending' ? 'secondary' : enrollment.status === 'confirmed' ? 'default' : 'destructive'}
+                              className="text-xs"
+                            >
+                              <Clock className="w-3 h-3 mr-1" />
+                              {enrollment.status === 'pending' 
+                                ? `aguardando aprovação para ${enrollment.cuidoteca.name} (${enrollment.institution.institutionName || enrollment.institution.name})`
+                                : enrollment.status === 'confirmed'
+                                ? `matriculado em ${enrollment.cuidoteca.name}`
+                                : `rejeitado em ${enrollment.cuidoteca.name}`
+                              }
+                            </Badge>
+                            {enrollment.status === 'pending' && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="text-red-600 hover:bg-red-50 h-6 w-6 p-0"
+                                onClick={() => handleCancelEnrollment(enrollment.id, child.name, enrollment.cuidoteca.name)}
+                                disabled={cancelEnrollmentMutation.isPending}
+                                title="Cancelar inscrição"
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            )}
+                          </div>
                         ))}
                       </div>
                       <p className="text-sm text-muted-foreground">{child.age} anos</p>

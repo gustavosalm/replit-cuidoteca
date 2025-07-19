@@ -47,8 +47,13 @@ export default function InstitutionProfile() {
     enabled: !!id,
   });
 
-  const { data: connectedUsers = [], isLoading: loadingUsers } = useQuery({
-    queryKey: ["/api/institutions", id, "connections"],
+  const { data: connectedStudents = [], isLoading: loadingStudents } = useQuery({
+    queryKey: ["/api/institutions", id, "connected-students"],
+    enabled: !!id,
+  });
+
+  const { data: connectedCuidadores = [], isLoading: loadingCuidadores } = useQuery({
+    queryKey: ["/api/institutions", id, "connected-cuidadores"],
     enabled: !!id,
   });
 
@@ -62,7 +67,8 @@ export default function InstitutionProfile() {
       apiRequest("POST", `/api/institutions/${id}/connect`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/institutions", id] });
-      queryClient.invalidateQueries({ queryKey: ["/api/institutions", id, "connections"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/institutions", id, "connected-students"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/institutions", id, "connected-cuidadores"] });
       queryClient.invalidateQueries({ queryKey: ["/api/users/connections"] });
       toast({
         title: "Conectado com sucesso!",
@@ -85,7 +91,8 @@ export default function InstitutionProfile() {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/institutions", id] });
-      queryClient.invalidateQueries({ queryKey: ["/api/institutions", id, "connections"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/institutions", id, "connected-students"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/institutions", id, "connected-cuidadores"] });
       queryClient.invalidateQueries({ queryKey: ["/api/users/connections"] });
       toast({
         title: "Desconectado",
@@ -105,7 +112,7 @@ export default function InstitutionProfile() {
     conn.institutionId === parseInt(id || "0")
   );
 
-  if (loadingInstitution || loadingUsers || loadingConnections) {
+  if (loadingInstitution || loadingStudents || loadingCuidadores || loadingConnections) {
     return (
       <div className="min-h-screen bg-neutral p-4">
         <div className="max-w-4xl mx-auto">
@@ -236,21 +243,76 @@ export default function InstitutionProfile() {
           <CardHeader>
             <CardTitle className="flex items-center">
               <Users className="h-5 w-5 mr-2" />
-              Estudantes Conectados ({connectedUsers.length})
+              Estudantes Conectados ({connectedStudents.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {connectedUsers.length === 0 ? (
+            {connectedStudents.length === 0 ? (
               <div className="text-center py-8">
                 <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-semibold mb-2">Nenhum estudante conectado</h3>
                 <p className="text-muted-foreground">
-                  Seja o primeiro a se conectar a esta instituição!
+                  Aguardando estudantes se conectarem a esta instituição.
                 </p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {connectedUsers.map((connectedUser: ConnectedUser) => (
+                {connectedStudents.map((connectedUser: ConnectedUser) => (
+                  <Card 
+                    key={connectedUser.id} 
+                    className="hover:shadow-md transition-shadow cursor-pointer"
+                    onClick={() => setLocation(`/profile/${connectedUser.id}`)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-center space-x-3">
+                        <Avatar>
+                          <AvatarFallback>
+                            {connectedUser.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium truncate">{connectedUser.name}</h4>
+                          <div className="text-sm text-muted-foreground space-y-1">
+                            {connectedUser.course && (
+                              <p className="truncate">{connectedUser.course}</p>
+                            )}
+                            {connectedUser.semester && (
+                              <p>{connectedUser.semester}º semestre</p>
+                            )}
+                            {connectedUser.universityId && (
+                              <p className="truncate">RA: {connectedUser.universityId}</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Connected Cuidadores */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <GraduationCap className="h-5 w-5 mr-2" />
+              Cuidadores Conectados ({connectedCuidadores.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {connectedCuidadores.length === 0 ? (
+              <div className="text-center py-8">
+                <GraduationCap className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Nenhum cuidador conectado</h3>
+                <p className="text-muted-foreground">
+                  Aguardando cuidadores se conectarem a esta instituição.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {connectedCuidadores.map((connectedUser: ConnectedUser) => (
                   <Card 
                     key={connectedUser.id} 
                     className="hover:shadow-md transition-shadow cursor-pointer"
