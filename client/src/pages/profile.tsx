@@ -116,8 +116,12 @@ export default function Profile() {
         return "Responsável";
       case "coordinator":
         return "Coordenador(a)";
+      case "cuidador":
+        return "Cuidador(a)";
       case "caregiver":
         return "Cuidador(a)";
+      case "institution":
+        return "Instituição";
       default:
         return role;
     }

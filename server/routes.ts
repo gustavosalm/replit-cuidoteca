@@ -145,6 +145,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Direct user connection route (for parent-cuidador connections)
+  app.post('/api/users/:id/connect', authenticateToken, async (req, res) => {
+    try {
+      const targetUserId = parseInt(req.params.id);
+      const currentUser = req.user;
+      
+      // Get target user info
+      const targetUser = await storage.getUser(targetUserId);
+      if (!targetUser) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      
+      // Verify users can connect (parent-cuidador relationship)
+      const canConnect = 
+        (currentUser.role === 'parent' && targetUser.role === 'cuidador') ||
+        (currentUser.role === 'cuidador' && targetUser.role === 'parent');
+        
+      if (!canConnect) {
+        return res.status(400).json({ message: 'Users cannot connect directly' });
+      }
+      
+      // Create notification for target user
+      await storage.createNotification({
+        userId: targetUserId,
+        message: `${currentUser.name} gostaria de se conectar com você`
+      });
+      
+      res.status(200).json({ message: 'Connection request sent' });
+    } catch (error) {
+      console.error('Connect users error:', error);
+      res.status(500).json({ message: 'Failed to send connection request' });
+    }
+  });
+
   // Get user by ID
   app.get('/api/users/:id', authenticateToken, async (req, res) => {
     try {
@@ -359,7 +393,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userConnections = await storage.getUserConnections(req.user.id);
       
       if (userConnections.length === 0) {
-        return res.status(400).json({ message: 'You must be connected to an institution to post' });
+        return res.status(400).json({ message: 'Conecte-se à sua instituição para começar a postar' });
       }
       
       const postData = insertPostSchema.parse({

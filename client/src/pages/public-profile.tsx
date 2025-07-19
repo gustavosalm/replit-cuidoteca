@@ -47,14 +47,23 @@ export default function PublicProfile() {
     },
   });
 
-  // Connect mutation (placeholder for future direct user connections)
+  // Connect mutation - implement direct user connections
   const connectMutation = useMutation({
     mutationFn: async () => {
-      // This would be implemented when direct user-to-user connections are added
-      // For now, we'll show a message about connecting through institutions
+      return await apiRequest("POST", `/api/users/${user.id}/connect`);
+    },
+    onSuccess: () => {
       toast({
-        title: "Conectar usuários",
-        description: "Para conectar com outros usuários, utilize as instituições como ponte de conexão.",
+        title: "Conexão enviada!",
+        description: "Sua solicitação de conexão foi enviada com sucesso.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/users/connections"] });
+    },
+    onError: () => {
+      toast({
+        title: "Erro ao conectar",
+        description: "Não foi possível enviar a solicitação de conexão.",
+        variant: "destructive",
       });
     },
   });

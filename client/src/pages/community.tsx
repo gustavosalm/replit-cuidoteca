@@ -16,6 +16,19 @@ export default function Community() {
   const queryClient = useQueryClient();
   const [newPost, setNewPost] = useState("");
 
+  // Get user's connections to check if they're connected to any institution
+  const { data: userConnections } = useQuery({
+    queryKey: ["/api/users/connections"],
+    enabled: !!user,
+  });
+
+  // Get user's first connected institution details
+  const firstInstitutionId = userConnections?.[0]?.institutionId;
+  const { data: institutionDetails } = useQuery({
+    queryKey: ["/api/institutions", firstInstitutionId],
+    enabled: !!firstInstitutionId,
+  });
+
   const { data: posts, isLoading } = useQuery({
     queryKey: ["/api/posts"],
   });
@@ -32,10 +45,11 @@ export default function Community() {
         description: "Sua mensagem foi compartilhada com a comunidade",
       });
     },
-    onError: () => {
+    onError: (error: any) => {
+      const errorMessage = error?.response?.data?.message || "Não foi possível criar o post";
       toast({
         title: "Erro ao criar post",
-        description: "Não foi possível criar o post",
+        description: errorMessage,
         variant: "destructive",
       });
     },
@@ -51,6 +65,15 @@ export default function Community() {
   });
 
   const handleCreatePost = () => {
+    if (!userConnections || userConnections.length === 0) {
+      toast({
+        title: "Conecte-se à sua instituição",
+        description: "Conecte-se à sua instituição para começar a postar",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!newPost.trim()) {
       toast({
         title: "Mensagem vazia",
@@ -80,26 +103,37 @@ export default function Community() {
         <div className="mb-8">
           <Card>
             <CardHeader>
-              <CardTitle className="text-2xl">Comunidade Cuidoteca</CardTitle>
+              <CardTitle className="text-2xl">
+                Comunidade {institutionDetails?.name || institutionDetails?.institutionName || "Cuidoteca"}
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <Textarea
-                  placeholder="Compartilhe algo com a comunidade..."
-                  value={newPost}
-                  onChange={(e) => setNewPost(e.target.value)}
-                  rows={3}
-                />
-                <div className="flex justify-end">
-                  <Button
-                    onClick={handleCreatePost}
-                    disabled={createPostMutation.isPending || !newPost.trim()}
-                  >
-                    <Send className="h-4 w-4 mr-2" />
-                    {createPostMutation.isPending ? "Publicando..." : "Publicar"}
-                  </Button>
+              {(!userConnections || userConnections.length === 0) ? (
+                <div className="text-center p-6">
+                  <MessageCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">
+                    Conecte-se à sua instituição para começar a postar
+                  </p>
                 </div>
-              </div>
+              ) : (
+                <div className="space-y-4">
+                  <Textarea
+                    placeholder="Compartilhe algo com a comunidade..."
+                    value={newPost}
+                    onChange={(e) => setNewPost(e.target.value)}
+                    rows={3}
+                  />
+                  <div className="flex justify-end">
+                    <Button
+                      onClick={handleCreatePost}
+                      disabled={createPostMutation.isPending || !newPost.trim()}
+                    >
+                      <Send className="h-4 w-4 mr-2" />
+                      {createPostMutation.isPending ? "Publicando..." : "Publicar"}
+                    </Button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -131,12 +165,25 @@ export default function Community() {
             <Card>
               <CardContent className="p-8 text-center">
                 <MessageCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground mb-4">
-                  Ainda não há mensagens na comunidade
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Seja a primeira pessoa a compartilhar algo!
-                </p>
+                {(!userConnections || userConnections.length === 0) ? (
+                  <div>
+                    <p className="text-muted-foreground mb-4">
+                      Conecte-se à sua instituição para ver as mensagens da comunidade
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Acesse sua instituição para começar a participar!
+                    </p>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="text-muted-foreground mb-4">
+                      Ainda não há mensagens na comunidade
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Seja a primeira pessoa a compartilhar algo!
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           ) : (
