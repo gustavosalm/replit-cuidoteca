@@ -52,11 +52,11 @@ export default function CuidotecasSection({ institutionId, user }: CuidotecasSec
       requestedDays: string[]; 
       requestedHours: string 
     }) => {
-      return await apiRequest(`/api/cuidotecas/${cuidotecaId}/enroll`, {
-        method: "POST",
-        body: JSON.stringify({ childId, requestedDays, requestedHours }),
-        headers: { "Content-Type": "application/json" }
-      });
+      return await apiRequest(
+        "POST",
+        `/api/cuidotecas/${cuidotecaId}/enroll`,
+        { childId, requestedDays, requestedHours }
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/cuidotecas"] });
@@ -72,10 +72,11 @@ export default function CuidotecasSection({ institutionId, user }: CuidotecasSec
         description: "Aguarde a aprovação da instituição.",
       });
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error('Enrollment error:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível enviar a inscrição.",
+        description: error?.message || "Não foi possível enviar a inscrição.",
         variant: "destructive",
       });
     },
