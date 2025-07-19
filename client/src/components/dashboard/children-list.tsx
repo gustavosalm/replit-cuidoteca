@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Baby, Edit, Trash2, Plus } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Baby, Edit, Trash2, Plus, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import ChildModal from "@/components/modals/child-modal";
@@ -17,12 +18,17 @@ export default function ChildrenList() {
     queryKey: ["/api/children"],
   });
 
+  const { data: enrollments = [] } = useQuery({
+    queryKey: ["/api/enrollments/my-children"],
+  });
+
   const deleteMutation = useMutation({
     mutationFn: async (childId: number) => {
       await apiRequest("DELETE", `/api/children/${childId}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/children"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/enrollments/my-children"] });
       toast({
         title: "Criança removida",
         description: "A criança foi removida com sucesso",
@@ -51,6 +57,11 @@ export default function ChildrenList() {
   const handleModalClose = () => {
     setIsChildModalOpen(false);
     setEditingChild(null);
+  };
+
+  // Helper function to get enrollment status for a child
+  const getChildEnrollmentStatus = (childId: number) => {
+    return enrollments.filter((enrollment: any) => enrollment.childId === childId);
   };
 
   if (isLoading) {
@@ -107,7 +118,24 @@ export default function ChildrenList() {
                       <Baby className="h-6 w-6 text-primary" />
                     </div>
                     <div className="ml-4 flex-1">
-                      <h4 className="font-medium text-foreground">{child.name}</h4>
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="font-medium text-foreground">{child.name}</h4>
+                        {getChildEnrollmentStatus(child.id).map((enrollment: any) => (
+                          <Badge 
+                            key={enrollment.id}
+                            variant={enrollment.status === 'pending' ? 'secondary' : enrollment.status === 'confirmed' ? 'default' : 'destructive'}
+                            className="text-xs"
+                          >
+                            <Clock className="w-3 h-3 mr-1" />
+                            {enrollment.status === 'pending' 
+                              ? `aguardando aprovação para ${enrollment.cuidoteca.name} (${enrollment.institution.institutionName || enrollment.institution.name})`
+                              : enrollment.status === 'confirmed'
+                              ? `matriculado em ${enrollment.cuidoteca.name}`
+                              : `rejeitado em ${enrollment.cuidoteca.name}`
+                            }
+                          </Badge>
+                        ))}
+                      </div>
                       <p className="text-sm text-muted-foreground">{child.age} anos</p>
                       {child.specialNeeds && (
                         <p className="text-sm text-muted-foreground">

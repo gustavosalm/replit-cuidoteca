@@ -45,6 +45,11 @@ export default function CuidotecasSection({ institutionId, user }: CuidotecasSec
     enabled: user?.role === 'parent',
   });
 
+  const { data: enrollments = [] } = useQuery({
+    queryKey: ["/api/enrollments/my-children"],
+    enabled: user?.role === 'parent',
+  });
+
   const enrollMutation = useMutation({
     mutationFn: async ({ cuidotecaId, childId, requestedDays, requestedHours }: { 
       cuidotecaId: number; 
@@ -61,6 +66,7 @@ export default function CuidotecasSection({ institutionId, user }: CuidotecasSec
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/cuidotecas"] });
       queryClient.invalidateQueries({ queryKey: ["/api/children"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/enrollments/my-children"] });
       setEnrollModalOpen(false);
       setSelectedChild("");
       setSelectedCuidoteca(null);
@@ -91,14 +97,34 @@ export default function CuidotecasSection({ institutionId, user }: CuidotecasSec
     setEnrollModalOpen(true);
   };
 
+  // Helper function to check if child is already enrolled in a cuidoteca
+  const isChildAlreadyEnrolled = (childId: number, cuidotecaId: number) => {
+    return enrollments.some((enrollment: any) => 
+      enrollment.childId === childId && 
+      enrollment.cuidotecaId === cuidotecaId &&
+      (enrollment.status === 'pending' || enrollment.status === 'confirmed')
+    );
+  };
+
   const handleEnroll = () => {
     if (!selectedChild || !selectedCuidoteca || selectedDays.length === 0 || !fromHour || !untilHour) return;
+    
+    // Check for duplicate enrollment
+    const childId = parseInt(selectedChild);
+    if (isChildAlreadyEnrolled(childId, selectedCuidoteca.id)) {
+      toast({
+        title: "Já inscrito",
+        description: "Criança já está inscrita, aguardando aprovação da instituição",
+        variant: "destructive",
+      });
+      return;
+    }
     
     const requestedHours = `${fromHour}-${untilHour}`;
     
     enrollMutation.mutate({
       cuidotecaId: selectedCuidoteca.id,
-      childId: parseInt(selectedChild),
+      childId: childId,
       requestedDays: selectedDays,
       requestedHours: requestedHours
     });

@@ -588,6 +588,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Parent enrollment routes
+  app.get('/api/enrollments/my-children', authenticateToken, async (req, res) => {
+    try {
+      if (req.user.role !== 'parent') {
+        return res.status(403).json({ message: 'Only parents can view their children enrollments' });
+      }
+      const enrollments = await storage.getParentChildrenEnrollments(req.user.id);
+      res.json(enrollments);
+    } catch (error) {
+      console.error('Get parent enrollments error:', error);
+      res.status(500).json({ message: 'Failed to get enrollments' });
+    }
+  });
+
   // Enrollment management routes
   app.get('/api/enrollments/pending', authenticateToken, async (req, res) => {
     try {
