@@ -198,6 +198,12 @@ export const insertInstitutionSchema = insertUserSchema.extend({
   address: true, // Institutions don't need these personal fields
 });
 
+export const insertCuidadorSchema = insertUserSchema.extend({
+  role: z.literal("cuidador").default("cuidador"),
+}).omit({
+  institutionName: true, // Cuidadores don't need institution name
+});
+
 export const insertChildSchema = createInsertSchema(children).omit({
   id: true,
   createdAt: true,
@@ -245,6 +251,7 @@ export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertParent = z.infer<typeof insertParentSchema>;
 export type InsertInstitution = z.infer<typeof insertInstitutionSchema>;
+export type InsertCuidador = z.infer<typeof insertCuidadorSchema>;
 export type Child = typeof children.$inferSelect;
 export type InsertChild = z.infer<typeof insertChildSchema>;
 export type Schedule = typeof schedules.$inferSelect;

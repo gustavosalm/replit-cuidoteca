@@ -31,9 +31,10 @@ Preferred communication style: Simple, everyday language.
 ## Key Components
 
 ### User Management
-- **User Roles**: Three distinct roles (parent, coordinator, caregiver)
+- **User Roles**: Three distinct roles (parent, institution, cuidador)
 - **Authentication**: JWT-based authentication with role verification
 - **Profile Management**: Complete user profile with university details
+- **Cuidador System**: Separate enrollment system for caregivers to self-register
 
 ### Child Management
 - **Child Registration**: Parents can register children with special needs information
@@ -58,10 +59,17 @@ Preferred communication style: Simple, everyday language.
 ## Data Flow
 
 ### Authentication Flow
-1. User registers with email/password and profile information
+1. User registers with email/password and profile information (parent, institution, or cuidador)
 2. System hashes password and creates JWT token
 3. Token stored in localStorage for subsequent requests
 4. Protected routes verify token and user role
+
+### Cuidador Enrollment Flow
+1. Cuidador registers and connects to institution
+2. Cuidador browses available cuidotecas at institution
+3. Cuidador self-enrolls without child selection
+4. Institution reviews and approves/rejects cuidador enrollment
+5. System updates enrollment status and notifies cuidador
 
 ### Scheduling Flow
 1. Parent creates child profile
@@ -106,4 +114,14 @@ Preferred communication style: Simple, everyday language.
 - **JWT Secret**: Configurable secret key for token signing
 - **Development Tools**: Replit-specific plugins for development environment
 
-The application uses a monorepo structure with shared TypeScript types and utilities, enabling type safety across the full stack while maintaining clear separation between frontend and backend concerns.
+## Recent Changes (July 19, 2025)
+
+### Cuidador Role Implementation
+- **Added Third User Role**: Implemented "cuidador" role alongside existing parent and institution roles
+- **Separate Enrollment System**: Created independent cuidador enrollment process without child dependency
+- **Database Schema**: Added cuidadorEnrollments table for caregiver-specific enrollments
+- **UI Updates**: Modified registration and dashboard to support cuidador workflows
+- **Button Labels**: Updated "Sou estudante" to "Sou cuidador" for cuidador users
+- **Role-Based Access**: Implemented proper authentication and authorization for cuidador operations
+
+The application uses a monorepo structure with shared TypeScript types and utilities, enabling type safety across the full stack while maintaining clear separation between frontend and backend concerns. The system now supports three distinct user workflows: parents managing children, institutions managing approvals, and cuidadores self-enrolling in childcare services.

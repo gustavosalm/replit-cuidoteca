@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { insertUserSchema, insertParentSchema, insertInstitutionSchema, insertChildSchema, insertScheduleSchema, insertPostSchema, insertNotificationSchema } from "@shared/schema";
+import { insertUserSchema, insertParentSchema, insertInstitutionSchema, insertCuidadorSchema, insertChildSchema, insertScheduleSchema, insertPostSchema, insertNotificationSchema } from "@shared/schema";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
@@ -43,6 +43,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let userData;
       if (role === 'institution') {
         userData = insertInstitutionSchema.parse(req.body);
+      } else if (role === 'cuidador') {
+        userData = insertCuidadorSchema.parse(req.body);
       } else {
         userData = insertParentSchema.parse(req.body);
       }
