@@ -119,7 +119,7 @@ export default function PublicProfile() {
           <Button 
             variant="outline" 
             size="sm"
-            onClick={() => setLocation("/")}
+            onClick={() => setLocation("/dashboard")}
           >
             <User className="h-4 w-4 mr-2" />
             Dashboard
@@ -141,7 +141,9 @@ export default function PublicProfile() {
                   <Badge variant={user.role === "parent" ? "default" : "secondary"}>
                     {user.role === "parent" ? "Pai/Mãe" : 
                      user.role === "coordinator" ? "Coordenador" :
-                     user.role === "caregiver" ? "Cuidador" : "Instituição"}
+                     user.role === "cuidador" ? "Cuidador" : 
+                     user.role === "caregiver" ? "Cuidador" : 
+                     user.role === "institution" ? "Instituição" : user.role}
                   </Badge>
                 </div>
               </div>
