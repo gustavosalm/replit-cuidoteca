@@ -27,7 +27,8 @@ export default function CuidotecasSection({ institutionId, user }: CuidotecasSec
   const [selectedCuidoteca, setSelectedCuidoteca] = useState<any>(null);
   const [selectedChild, setSelectedChild] = useState<string>("");
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
-  const [selectedHours, setSelectedHours] = useState<string>("");
+  const [fromHour, setFromHour] = useState<string>("");
+  const [untilHour, setUntilHour] = useState<string>("");
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -64,7 +65,8 @@ export default function CuidotecasSection({ institutionId, user }: CuidotecasSec
       setSelectedChild("");
       setSelectedCuidoteca(null);
       setSelectedDays([]);
-      setSelectedHours("");
+      setFromHour("");
+      setUntilHour("");
       toast({
         title: "Inscrição enviada!",
         description: "Aguarde a aprovação da instituição.",
@@ -81,17 +83,23 @@ export default function CuidotecasSection({ institutionId, user }: CuidotecasSec
 
   const handleEnrollClick = (cuidoteca: any) => {
     setSelectedCuidoteca(cuidoteca);
+    setSelectedChild("");
+    setSelectedDays([]);
+    setFromHour("");
+    setUntilHour("");
     setEnrollModalOpen(true);
   };
 
   const handleEnroll = () => {
-    if (!selectedChild || !selectedCuidoteca || selectedDays.length === 0 || !selectedHours) return;
+    if (!selectedChild || !selectedCuidoteca || selectedDays.length === 0 || !fromHour || !untilHour) return;
+    
+    const requestedHours = `${fromHour}-${untilHour}`;
     
     enrollMutation.mutate({
       cuidotecaId: selectedCuidoteca.id,
       childId: parseInt(selectedChild),
       requestedDays: selectedDays,
-      requestedHours: selectedHours
+      requestedHours: requestedHours
     });
   };
 
@@ -104,6 +112,25 @@ export default function CuidotecasSection({ institutionId, user }: CuidotecasSec
       friday: 'Sex',
     };
     return days.map(day => dayNames[day] || day).join(', ');
+  };
+
+  // Helper function to parse cuidoteca hours and generate available hours
+  const getAvailableHours = (hoursString: string) => {
+    if (!hoursString) return [];
+    
+    // Parse hours like "08:00-17:00" or "8:00-17:00"
+    const match = hoursString.match(/(\d{1,2}):?(\d{0,2})-(\d{1,2}):?(\d{0,2})/);
+    if (!match) return [];
+    
+    const startHour = parseInt(match[1]);
+    const endHour = parseInt(match[3]);
+    
+    const hours = [];
+    for (let hour = startHour; hour <= endHour; hour++) {
+      hours.push(`${hour.toString().padStart(2, '0')}:00`);
+    }
+    
+    return hours;
   };
 
   if (loadingCuidotecas) {
@@ -274,36 +301,65 @@ export default function CuidotecasSection({ institutionId, user }: CuidotecasSec
               )}
             </div>
 
-            <div>
-              <label className="text-sm font-medium">Selecione o horário:</label>
-              <Select value={selectedHours} onValueChange={setSelectedHours}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="Escolha o horário" />
-                </SelectTrigger>
-                <SelectContent>
-                  {selectedCuidoteca?.hours?.includes('8') && (
-                    <SelectItem value="morning">Manhã (8h-12h)</SelectItem>
-                  )}
-                  {selectedCuidoteca?.hours?.includes('13') && (
-                    <SelectItem value="afternoon">Tarde (13h-17h)</SelectItem>
-                  )}
-                  {selectedCuidoteca?.hours?.includes('8') && selectedCuidoteca?.hours?.includes('17') && (
-                    <SelectItem value="full">Período integral (8h-17h)</SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground mt-1">
-                Cuidoteca funciona: {selectedCuidoteca?.hours}
-              </p>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium">Horário de chegada:</label>
+                <Select value={fromHour} onValueChange={setFromHour}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Escolha horário" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getAvailableHours(selectedCuidoteca?.hours || "").slice(0, -1).map((hour) => (
+                      <SelectItem key={hour} value={hour}>
+                        {hour}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium">Horário de saída:</label>
+                <Select value={untilHour} onValueChange={setUntilHour}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Escolha horário" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getAvailableHours(selectedCuidoteca?.hours || "")
+                      .filter(hour => {
+                        if (!fromHour) return true;
+                        const fromHourNum = parseInt(fromHour.split(':')[0]);
+                        const hourNum = parseInt(hour.split(':')[0]);
+                        return hourNum > fromHourNum;
+                      })
+                      .map((hour) => (
+                        <SelectItem key={hour} value={hour}>
+                          {hour}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
+            
+            <p className="text-xs text-muted-foreground">
+              Cuidoteca funciona: {selectedCuidoteca?.hours}
+            </p>
 
             <div className="flex justify-end space-x-2 pt-4">
-              <Button variant="outline" onClick={() => setEnrollModalOpen(false)}>
+              <Button variant="outline" onClick={() => {
+                setEnrollModalOpen(false);
+                setSelectedChild("");
+                setSelectedCuidoteca(null);
+                setSelectedDays([]);
+                setFromHour("");
+                setUntilHour("");
+              }}>
                 Cancelar
               </Button>
               <Button 
                 onClick={handleEnroll}
-                disabled={!selectedChild || selectedDays.length === 0 || !selectedHours || enrollMutation.isPending}
+                disabled={!selectedChild || selectedDays.length === 0 || !fromHour || !untilHour || enrollMutation.isPending}
               >
                 {enrollMutation.isPending ? "Enviando..." : "Inscrever"}
               </Button>
