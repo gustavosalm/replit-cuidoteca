@@ -197,7 +197,7 @@ export default function InstitutionProfile() {
               </div>
 
               {/* Connection Action */}
-              {user?.role === "parent" && (
+              {(user?.role === "parent" || user?.role === "cuidador") && (
                 <div className="flex flex-col justify-center">
                   {isConnected ? (
                     <Button

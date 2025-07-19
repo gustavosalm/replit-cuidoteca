@@ -436,9 +436,15 @@ export default function CuidotecasSection({ institutionId, user }: CuidotecasSec
               </Button>
               <Button 
                 onClick={handleEnroll}
-                disabled={!selectedChild || selectedDays.length === 0 || !fromHour || !untilHour || enrollMutation.isPending}
+                disabled={
+                  (user?.role === 'parent' && !selectedChild) || 
+                  selectedDays.length === 0 || 
+                  !fromHour || 
+                  !untilHour || 
+                  enrollMutation.isPending
+                }
               >
-                {enrollMutation.isPending ? "Enviando..." : "Inscrever"}
+                {enrollMutation.isPending ? "Enviando..." : user?.role === 'cuidador' ? "Inscrever-me" : "Inscrever"}
               </Button>
             </div>
           </div>
