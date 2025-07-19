@@ -5,6 +5,8 @@ import {
   posts, 
   notifications,
   universityConnections,
+  cuidotecas,
+  cuidotecaEnrollments,
   type User, 
   type InsertUser,
   type Child,
@@ -17,6 +19,10 @@ import {
   type InsertNotification,
   type UniversityConnection,
   type InsertUniversityConnection,
+  type Cuidoteca,
+  type InsertCuidoteca,
+  type CuidotecaEnrollment,
+  type InsertCuidotecaEnrollment,
   type UserWithChildren,
   type ChildWithSchedules,
   type PostWithAuthor,
@@ -71,6 +77,20 @@ export interface IStorage {
   connectToInstitution(userId: number, institutionId: number): Promise<UniversityConnection>;
   disconnectFromInstitution(userId: number, institutionId: number): Promise<void>;
   getUserConnections(userId: number): Promise<UniversityConnection[]>;
+  
+  // Cuidoteca operations
+  getCuidotecasByInstitution(institutionId: number): Promise<Cuidoteca[]>;
+  getCuidoteca(id: number): Promise<Cuidoteca | undefined>;
+  createCuidoteca(cuidoteca: InsertCuidoteca): Promise<Cuidoteca>;
+  updateCuidoteca(id: number, cuidoteca: Partial<InsertCuidoteca>): Promise<Cuidoteca>;
+  deleteCuidoteca(id: number): Promise<void>;
+  
+  // Cuidoteca enrollment operations
+  getCuidotecaEnrollments(cuidotecaId: number): Promise<CuidotecaEnrollment[]>;
+  getChildEnrollments(childId: number): Promise<CuidotecaEnrollment[]>;
+  enrollChildInCuidoteca(enrollment: InsertCuidotecaEnrollment): Promise<CuidotecaEnrollment>;
+  updateEnrollmentStatus(id: number, status: string): Promise<CuidotecaEnrollment>;
+  removeChildFromCuidoteca(enrollmentId: number): Promise<void>;
   
   // Admin operations
   getAdminStats(): Promise<{
@@ -335,6 +355,79 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(universityConnections)
       .where(eq(universityConnections.userId, userId));
+  }
+
+  // Cuidoteca operations
+  async getCuidotecasByInstitution(institutionId: number): Promise<Cuidoteca[]> {
+    return await db
+      .select()
+      .from(cuidotecas)
+      .where(eq(cuidotecas.institutionId, institutionId));
+  }
+
+  async getCuidoteca(id: number): Promise<Cuidoteca | undefined> {
+    const [cuidoteca] = await db
+      .select()
+      .from(cuidotecas)
+      .where(eq(cuidotecas.id, id));
+    return cuidoteca || undefined;
+  }
+
+  async createCuidoteca(insertCuidoteca: InsertCuidoteca): Promise<Cuidoteca> {
+    const [cuidoteca] = await db
+      .insert(cuidotecas)
+      .values(insertCuidoteca)
+      .returning();
+    return cuidoteca;
+  }
+
+  async updateCuidoteca(id: number, updateCuidoteca: Partial<InsertCuidoteca>): Promise<Cuidoteca> {
+    const [cuidoteca] = await db
+      .update(cuidotecas)
+      .set(updateCuidoteca)
+      .where(eq(cuidotecas.id, id))
+      .returning();
+    return cuidoteca;
+  }
+
+  async deleteCuidoteca(id: number): Promise<void> {
+    await db.delete(cuidotecas).where(eq(cuidotecas.id, id));
+  }
+
+  // Cuidoteca enrollment operations
+  async getCuidotecaEnrollments(cuidotecaId: number): Promise<CuidotecaEnrollment[]> {
+    return await db
+      .select()
+      .from(cuidotecaEnrollments)
+      .where(eq(cuidotecaEnrollments.cuidotecaId, cuidotecaId));
+  }
+
+  async getChildEnrollments(childId: number): Promise<CuidotecaEnrollment[]> {
+    return await db
+      .select()
+      .from(cuidotecaEnrollments)
+      .where(eq(cuidotecaEnrollments.childId, childId));
+  }
+
+  async enrollChildInCuidoteca(enrollment: InsertCuidotecaEnrollment): Promise<CuidotecaEnrollment> {
+    const [newEnrollment] = await db
+      .insert(cuidotecaEnrollments)
+      .values(enrollment)
+      .returning();
+    return newEnrollment;
+  }
+
+  async updateEnrollmentStatus(id: number, status: string): Promise<CuidotecaEnrollment> {
+    const [enrollment] = await db
+      .update(cuidotecaEnrollments)
+      .set({ status: status as any })
+      .where(eq(cuidotecaEnrollments.id, id))
+      .returning();
+    return enrollment;
+  }
+
+  async removeChildFromCuidoteca(enrollmentId: number): Promise<void> {
+    await db.delete(cuidotecaEnrollments).where(eq(cuidotecaEnrollments.id, enrollmentId));
   }
 
   async getAdminStats(): Promise<{

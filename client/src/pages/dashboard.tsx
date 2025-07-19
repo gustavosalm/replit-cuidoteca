@@ -9,6 +9,7 @@ import ChildrenList from "@/components/dashboard/children-list";
 import SchedulesList from "@/components/dashboard/schedules-list";
 import CommunityPreview from "@/components/dashboard/community-preview";
 import Notifications from "@/components/dashboard/notifications";
+import CuidotecasList from "@/components/dashboard/cuidotecas-list";
 
 export default function Dashboard() {
   const { user, isLoading } = useAuth();
@@ -69,8 +70,15 @@ export default function Dashboard() {
         </div>
 
         <QuickActions />
-        <ChildrenList />
-        <SchedulesList />
+        {user.role === 'parent' && (
+          <>
+            <ChildrenList />
+            <SchedulesList />
+          </>
+        )}
+        {user.role === 'institution' && (
+          <CuidotecasList />
+        )}
         <CommunityPreview />
         <Notifications />
       </main>

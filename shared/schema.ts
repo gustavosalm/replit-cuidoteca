@@ -67,6 +67,25 @@ export const universityConnections = pgTable("university_connections", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const cuidotecas = pgTable("cuidotecas", {
+  id: serial("id").primaryKey(),
+  institutionId: integer("institution_id").references(() => users.id).notNull(),
+  name: text("name").notNull(),
+  hours: text("hours").notNull(), // e.g. "08:00-12:00"
+  days: text("days").array().notNull(), // array of days
+  assignedCaretakers: text("assigned_caretakers").array().default([]).notNull(),
+  maxCapacity: integer("max_capacity").default(20).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const cuidotecaEnrollments = pgTable("cuidoteca_enrollments", {
+  id: serial("id").primaryKey(),
+  cuidotecaId: integer("cuidoteca_id").references(() => cuidotecas.id).notNull(),
+  childId: integer("child_id").references(() => children.id).notNull(),
+  enrollmentDate: timestamp("enrollment_date").defaultNow().notNull(),
+  status: scheduleStatusEnum("status").notNull().default("pending"),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   children: many(children),
@@ -78,6 +97,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   institutionConnections: many(universityConnections, {
     relationName: "institutionConnections",
   }),
+  cuidotecas: many(cuidotecas),
 }));
 
 export const childrenRelations = relations(children, ({ one, many }) => ({
@@ -119,6 +139,25 @@ export const universityConnectionsRelations = relations(universityConnections, (
     fields: [universityConnections.institutionId],
     references: [users.id],
     relationName: "institutionConnections",
+  }),
+}));
+
+export const cuidotecasRelations = relations(cuidotecas, ({ one, many }) => ({
+  institution: one(users, {
+    fields: [cuidotecas.institutionId],
+    references: [users.id],
+  }),
+  enrollments: many(cuidotecaEnrollments),
+}));
+
+export const cuidotecaEnrollmentsRelations = relations(cuidotecaEnrollments, ({ one }) => ({
+  cuidoteca: one(cuidotecas, {
+    fields: [cuidotecaEnrollments.cuidotecaId],
+    references: [cuidotecas.id],
+  }),
+  child: one(children, {
+    fields: [cuidotecaEnrollments.childId],
+    references: [children.id],
   }),
 }));
 
@@ -174,6 +213,16 @@ export const insertUniversityConnectionSchema = createInsertSchema(universityCon
   createdAt: true,
 });
 
+export const insertCuidotecaSchema = createInsertSchema(cuidotecas).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertCuidotecaEnrollmentSchema = createInsertSchema(cuidotecaEnrollments).omit({
+  id: true,
+  enrollmentDate: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -189,6 +238,10 @@ export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 export type UniversityConnection = typeof universityConnections.$inferSelect;
 export type InsertUniversityConnection = z.infer<typeof insertUniversityConnectionSchema>;
+export type Cuidoteca = typeof cuidotecas.$inferSelect;
+export type InsertCuidoteca = z.infer<typeof insertCuidotecaSchema>;
+export type CuidotecaEnrollment = typeof cuidotecaEnrollments.$inferSelect;
+export type InsertCuidotecaEnrollment = z.infer<typeof insertCuidotecaEnrollmentSchema>;
 
 // Extended types for queries with relations
 export type UserWithChildren = User & {

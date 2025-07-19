@@ -443,6 +443,137 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Cuidoteca routes
+  app.get('/api/cuidotecas', authenticateToken, async (req, res) => {
+    try {
+      const institutionId = req.user.role === 'institution' ? req.user.id : req.query.institutionId;
+      if (!institutionId) {
+        return res.status(400).json({ message: 'Institution ID required' });
+      }
+      const cuidotecas = await storage.getCuidotecasByInstitution(parseInt(institutionId as string));
+      res.json(cuidotecas);
+    } catch (error) {
+      console.error('Get cuidotecas error:', error);
+      res.status(500).json({ message: 'Failed to get cuidotecas' });
+    }
+  });
+
+  app.get('/api/cuidotecas/:id', authenticateToken, async (req, res) => {
+    try {
+      const cuidotecaId = parseInt(req.params.id);
+      const cuidoteca = await storage.getCuidoteca(cuidotecaId);
+      if (!cuidoteca) {
+        return res.status(404).json({ message: 'Cuidoteca not found' });
+      }
+      res.json(cuidoteca);
+    } catch (error) {
+      console.error('Get cuidoteca error:', error);
+      res.status(500).json({ message: 'Failed to get cuidoteca' });
+    }
+  });
+
+  app.post('/api/cuidotecas', authenticateToken, async (req, res) => {
+    try {
+      if (req.user.role !== 'institution') {
+        return res.status(403).json({ message: 'Only institutions can create cuidotecas' });
+      }
+      
+      const cuidotecaData = { ...req.body, institutionId: req.user.id };
+      const cuidoteca = await storage.createCuidoteca(cuidotecaData);
+      res.status(201).json(cuidoteca);
+    } catch (error) {
+      console.error('Create cuidoteca error:', error);
+      res.status(500).json({ message: 'Failed to create cuidoteca' });
+    }
+  });
+
+  app.put('/api/cuidotecas/:id', authenticateToken, async (req, res) => {
+    try {
+      const cuidotecaId = parseInt(req.params.id);
+      const cuidoteca = await storage.getCuidoteca(cuidotecaId);
+      
+      if (!cuidoteca) {
+        return res.status(404).json({ message: 'Cuidoteca not found' });
+      }
+      
+      if (req.user.role !== 'institution' || cuidoteca.institutionId !== req.user.id) {
+        return res.status(403).json({ message: 'Unauthorized' });
+      }
+      
+      const updatedCuidoteca = await storage.updateCuidoteca(cuidotecaId, req.body);
+      res.json(updatedCuidoteca);
+    } catch (error) {
+      console.error('Update cuidoteca error:', error);
+      res.status(500).json({ message: 'Failed to update cuidoteca' });
+    }
+  });
+
+  app.delete('/api/cuidotecas/:id', authenticateToken, async (req, res) => {
+    try {
+      const cuidotecaId = parseInt(req.params.id);
+      const cuidoteca = await storage.getCuidoteca(cuidotecaId);
+      
+      if (!cuidoteca) {
+        return res.status(404).json({ message: 'Cuidoteca not found' });
+      }
+      
+      if (req.user.role !== 'institution' || cuidoteca.institutionId !== req.user.id) {
+        return res.status(403).json({ message: 'Unauthorized' });
+      }
+      
+      await storage.deleteCuidoteca(cuidotecaId);
+      res.status(204).send();
+    } catch (error) {
+      console.error('Delete cuidoteca error:', error);
+      res.status(500).json({ message: 'Failed to delete cuidoteca' });
+    }
+  });
+
+  // Cuidoteca enrollment routes
+  app.get('/api/cuidotecas/:id/enrollments', authenticateToken, async (req, res) => {
+    try {
+      const cuidotecaId = parseInt(req.params.id);
+      const enrollments = await storage.getCuidotecaEnrollments(cuidotecaId);
+      res.json(enrollments);
+    } catch (error) {
+      console.error('Get enrollments error:', error);
+      res.status(500).json({ message: 'Failed to get enrollments' });
+    }
+  });
+
+  app.post('/api/cuidotecas/:id/enroll', authenticateToken, async (req, res) => {
+    try {
+      if (req.user.role !== 'parent') {
+        return res.status(403).json({ message: 'Only parents can enroll children' });
+      }
+      
+      const cuidotecaId = parseInt(req.params.id);
+      const { childId } = req.body;
+      
+      const enrollment = await storage.enrollChildInCuidoteca({
+        cuidotecaId,
+        childId,
+        status: 'pending'
+      });
+      
+      res.status(201).json(enrollment);
+    } catch (error) {
+      console.error('Enroll child error:', error);
+      res.status(500).json({ message: 'Failed to enroll child' });
+    }
+  });
+
+  app.get('/api/children/:id/enrollments', authenticateToken, async (req, res) => {
+    try {
+      const childId = parseInt(req.params.id);
+      const enrollments = await storage.getChildEnrollments(childId);
+      res.json(enrollments);
+    } catch (error) {
+      console.error('Get child enrollments error:', error);
+      res.status(500).json({ message: 'Failed to get child enrollments' });
+    }
+  });
+
   // Admin routes
   app.get('/api/admin/stats', authenticateToken, requireAdmin, async (req, res) => {
     try {
