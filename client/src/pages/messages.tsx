@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { Send, User } from "lucide-react";
+import { Send, User, Calendar } from "lucide-react";
 import { format } from "date-fns";
 import type { Message } from "@shared/schema";
 
@@ -95,7 +95,13 @@ export default function Messages() {
 
   return (
     <div className="container mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6">Mensagens</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-3xl font-bold">Mensagens</h1>
+        <Button variant="outline" onClick={() => setLocation("/")}>
+          <Calendar className="h-4 w-4 mr-2" />
+          Dashboard
+        </Button>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[600px]">
         {/* Conversations List */}

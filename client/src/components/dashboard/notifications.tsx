@@ -56,7 +56,7 @@ export default function Notifications() {
   }
 
   return (
-    <section className="mb-8">
+    <section className="mb-8" data-section="notifications">
       <Card>
         <CardHeader>
           <CardTitle>Notificações</CardTitle>

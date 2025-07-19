@@ -1,10 +1,13 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { ArrowLeft, Mail, Phone, MapPin, GraduationCap, User, Building } from "lucide-react";
+import { ArrowLeft, Mail, Phone, MapPin, GraduationCap, User, Building, MessageCircle, UserPlus } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 interface PublicUser {
   id: number;
@@ -22,10 +25,38 @@ interface PublicUser {
 export default function PublicProfile() {
   const { id } = useParams();
   const [, setLocation] = useLocation();
+  const { user: currentUser } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: user, isLoading } = useQuery({
     queryKey: ["/api/users/public", id],
     enabled: !!id,
+  });
+
+  // Check if current user can connect to this user
+  const canConnect = currentUser && user && 
+    currentUser.id !== user.id && 
+    ((currentUser.role === 'parent' && user.role === 'cuidador') || 
+     (currentUser.role === 'cuidador' && user.role === 'parent'));
+
+  // Send message mutation
+  const sendMessageMutation = useMutation({
+    mutationFn: async () => {
+      setLocation(`/messages?user=${user.id}`);
+    },
+  });
+
+  // Connect mutation (placeholder for future direct user connections)
+  const connectMutation = useMutation({
+    mutationFn: async () => {
+      // This would be implemented when direct user-to-user connections are added
+      // For now, we'll show a message about connecting through institutions
+      toast({
+        title: "Conectar usuários",
+        description: "Para conectar com outros usuários, utilize as instituições como ponte de conexão.",
+      });
+    },
   });
 
   if (isLoading) {
@@ -181,6 +212,31 @@ export default function PublicProfile() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Action Buttons */}
+        {canConnect && (
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex gap-3">
+                <Button 
+                  onClick={() => sendMessageMutation.mutate()}
+                  className="flex-1"
+                >
+                  <MessageCircle className="h-4 w-4 mr-2" />
+                  Enviar Mensagem
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => connectMutation.mutate()}
+                  className="flex-1"
+                >
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Conectar
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Privacy Notice */}
         <Card>

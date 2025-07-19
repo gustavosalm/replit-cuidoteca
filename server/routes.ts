@@ -329,8 +329,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Posts routes
   app.get('/api/posts', authenticateToken, async (req, res) => {
     try {
-      const posts = await storage.getAllPosts();
-      res.json(posts);
+      // Get user's connected institutions
+      const userConnections = await storage.getUserConnections(req.user.id);
+      
+      if (userConnections.length === 0) {
+        return res.json([]);
+      }
+      
+      // Get posts from all connected institutions
+      const allPosts: any[] = [];
+      for (const connection of userConnections) {
+        const institutionPosts = await storage.getInstitutionPosts(connection.institutionId);
+        allPosts.push(...institutionPosts);
+      }
+      
+      // Sort by creation date (newest first)
+      allPosts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      
+      res.json(allPosts);
     } catch (error) {
       console.error('Get posts error:', error);
       res.status(500).json({ message: 'Failed to get posts' });
@@ -339,9 +355,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/posts', authenticateToken, async (req, res) => {
     try {
+      // Get user's connected institutions to post in the first one
+      const userConnections = await storage.getUserConnections(req.user.id);
+      
+      if (userConnections.length === 0) {
+        return res.status(400).json({ message: 'You must be connected to an institution to post' });
+      }
+      
       const postData = insertPostSchema.parse({
         ...req.body,
         authorId: req.user.id,
+        institutionId: userConnections[0].institutionId, // Post to the first connected institution
       });
       
       const post = await storage.createPost(postData);
@@ -622,6 +646,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         requestedHours
       });
       
+      // Get cuidoteca details to notify the institution
+      const cuidoteca = await storage.getCuidoteca(cuidotecaId);
+      if (cuidoteca) {
+        await storage.createNotification({
+          userId: cuidoteca.institutionId,
+          message: `Nova inscrição: ${child.name} se inscreveu na cuidoteca ${cuidoteca.name}`
+        });
+      }
+      
       res.status(201).json(enrollment);
     } catch (error) {
       console.error('Enroll child error:', error);
@@ -686,6 +719,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       const enrollment = await storage.enrollCuidadorInCuidoteca(enrollmentData);
+      
+      // Get cuidoteca details to notify the institution
+      const cuidoteca = await storage.getCuidoteca(cuidotecaId);
+      if (cuidoteca) {
+        await storage.createNotification({
+          userId: cuidoteca.institutionId,
+          message: `Novo cuidador: ${req.user.name} se inscreveu na cuidoteca ${cuidoteca.name}`
+        });
+      }
+      
       res.status(201).json(enrollment);
     } catch (error) {
       console.error('Cuidador enrollment error:', error);

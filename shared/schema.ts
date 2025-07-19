@@ -48,6 +48,7 @@ export const schedules = pgTable("schedules", {
 export const posts = pgTable("posts", {
   id: serial("id").primaryKey(),
   authorId: integer("author_id").references(() => users.id).notNull(),
+  institutionId: integer("institution_id").references(() => users.id),
   content: text("content").notNull(),
   likes: integer("likes").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),

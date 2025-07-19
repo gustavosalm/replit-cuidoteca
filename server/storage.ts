@@ -66,6 +66,7 @@ export interface IStorage {
   // Post operations
   getPost(id: number): Promise<Post | undefined>;
   getAllPosts(): Promise<PostWithAuthor[]>;
+  getInstitutionPosts(institutionId: number): Promise<PostWithAuthor[]>;
   createPost(post: InsertPost): Promise<Post>;
   updatePost(id: number, post: Partial<InsertPost>): Promise<Post>;
   deletePost(id: number): Promise<void>;
@@ -272,6 +273,16 @@ export class DatabaseStorage implements IStorage {
 
   async getAllPosts(): Promise<PostWithAuthor[]> {
     return await db.query.posts.findMany({
+      with: {
+        author: true,
+      },
+      orderBy: desc(posts.createdAt),
+    });
+  }
+
+  async getInstitutionPosts(institutionId: number): Promise<PostWithAuthor[]> {
+    return await db.query.posts.findMany({
+      where: eq(posts.institutionId, institutionId),
       with: {
         author: true,
       },

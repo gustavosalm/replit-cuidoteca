@@ -31,12 +31,14 @@ export default function Header() {
               >
                 Dashboard
               </Button>
-              <Button
-                variant={location === "/scheduling" ? "default" : "ghost"}
-                onClick={() => setLocation("/scheduling")}
-              >
-                Agendamento
-              </Button>
+              {user?.role === "institution" && (
+                <Button
+                  variant={location === "/scheduling" ? "default" : "ghost"}
+                  onClick={() => setLocation("/scheduling")}
+                >
+                  Eventos
+                </Button>
+              )}
               <Button
                 variant={location === "/community" ? "default" : "ghost"}
                 onClick={() => setLocation("/community")}
@@ -74,9 +76,22 @@ export default function Header() {
           
           <div className="flex items-center space-x-4">
             <div className="relative">
-              <Button variant="ghost" size="sm">
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => {
+                  setLocation("/");
+                  // Scroll to notifications section after a brief delay for navigation
+                  setTimeout(() => {
+                    const notificationsSection = document.querySelector('[data-section="notifications"]');
+                    if (notificationsSection) {
+                      notificationsSection.scrollIntoView({ behavior: 'smooth' });
+                    }
+                  }, 100);
+                }}
+              >
                 <Bell className="h-4 w-4" />
-                <span className="absolute -top-1 -right-1 block h-2 w-2 rounded-full bg-accent"></span>
+                <span className="absolute -top-1 -right-1 block h-2 w-2 rounded-full bg-red-500"></span>
               </Button>
             </div>
             <div className="relative">

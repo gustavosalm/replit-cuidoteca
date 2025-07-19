@@ -20,7 +20,7 @@ export default function StatsCards() {
   const unreadNotifications = notifications?.filter((n: any) => !n.read).length || 0;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
       <Card className="bg-gradient-to-r from-primary to-blue-600">
         <CardContent className="p-4 text-white">
           <div className="flex items-center">
@@ -30,18 +30,6 @@ export default function StatsCards() {
               <p className="text-lg font-semibold">
                 {nextAppointment ? `${nextAppointment.dayOfWeek}, ${nextAppointment.period}` : "Nenhum"}
               </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-      
-      <Card className="bg-gradient-to-r from-secondary to-green-600">
-        <CardContent className="p-4 text-white">
-          <div className="flex items-center">
-            <Baby className="h-8 w-8 mr-3" />
-            <div>
-              <p className="text-sm opacity-80">Crianças Cadastradas</p>
-              <p className="text-lg font-semibold">{childrenCount}</p>
             </div>
           </div>
         </CardContent>
