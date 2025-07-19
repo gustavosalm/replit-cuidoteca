@@ -430,6 +430,78 @@ export class DatabaseStorage implements IStorage {
     await db.delete(cuidotecaEnrollments).where(eq(cuidotecaEnrollments.id, enrollmentId));
   }
 
+  async getPendingEnrollmentsByInstitution(institutionId: number): Promise<any[]> {
+    const result = await db
+      .select({
+        id: cuidotecaEnrollments.id,
+        status: cuidotecaEnrollments.status,
+        child: {
+          id: children.id,
+          name: children.name,
+          age: children.age,
+          specialNeeds: children.specialNeeds,
+        },
+        parent: {
+          id: users.id,
+          name: users.name,
+          email: users.email,
+        },
+        cuidoteca: {
+          id: cuidotecas.id,
+          name: cuidotecas.name,
+          hours: cuidotecas.hours,
+        },
+      })
+      .from(cuidotecaEnrollments)
+      .innerJoin(children, eq(cuidotecaEnrollments.childId, children.id))
+      .innerJoin(users, eq(children.parentId, users.id))
+      .innerJoin(cuidotecas, eq(cuidotecaEnrollments.cuidotecaId, cuidotecas.id))
+      .where(
+        and(
+          eq(cuidotecaEnrollments.status, 'pending'),
+          eq(cuidotecas.institutionId, institutionId)
+        )
+      );
+    
+    return result;
+  }
+
+  async getEnrollmentDetails(enrollmentId: number): Promise<any> {
+    const [result] = await db
+      .select({
+        parentId: children.parentId,
+        childName: children.name,
+        cuidotecaName: cuidotecas.name,
+      })
+      .from(cuidotecaEnrollments)
+      .innerJoin(children, eq(cuidotecaEnrollments.childId, children.id))
+      .innerJoin(cuidotecas, eq(cuidotecaEnrollments.cuidotecaId, cuidotecas.id))
+      .where(eq(cuidotecaEnrollments.id, enrollmentId));
+    
+    return result;
+  }
+
+  async getInstitutionEnrollments(institutionId: number): Promise<any[]> {
+    const result = await db
+      .select({
+        id: cuidotecaEnrollments.id,
+        status: cuidotecaEnrollments.status,
+        cuidotecaId: cuidotecaEnrollments.cuidotecaId,
+        cuidotecaName: cuidotecas.name,
+        childId: children.id,
+        childName: children.name,
+        childAge: children.age,
+        parentName: users.name,
+      })
+      .from(cuidotecaEnrollments)
+      .innerJoin(cuidotecas, eq(cuidotecaEnrollments.cuidotecaId, cuidotecas.id))
+      .innerJoin(children, eq(cuidotecaEnrollments.childId, children.id))
+      .innerJoin(users, eq(children.parentId, users.id))
+      .where(eq(cuidotecas.institutionId, institutionId));
+    
+    return result;
+  }
+
   async getAdminStats(): Promise<{
     totalFamilies: number;
     activeChildren: number;

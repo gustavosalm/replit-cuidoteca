@@ -574,6 +574,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Enrollment management routes
+  app.get('/api/enrollments/pending', authenticateToken, async (req, res) => {
+    try {
+      if (req.user.role !== 'institution') {
+        return res.status(403).json({ message: 'Only institutions can view pending enrollments' });
+      }
+      const enrollments = await storage.getPendingEnrollmentsByInstitution(req.user.id);
+      res.json(enrollments);
+    } catch (error) {
+      console.error('Get pending enrollments error:', error);
+      res.status(500).json({ message: 'Failed to get pending enrollments' });
+    }
+  });
+
+  app.put('/api/enrollments/:id/approve', authenticateToken, async (req, res) => {
+    try {
+      if (req.user.role !== 'institution') {
+        return res.status(403).json({ message: 'Only institutions can approve enrollments' });
+      }
+      
+      const enrollmentId = parseInt(req.params.id);
+      const enrollment = await storage.updateEnrollmentStatus(enrollmentId, 'confirmed');
+      
+      // Create notification for parent
+      const enrollmentWithDetails = await storage.getEnrollmentDetails(enrollmentId);
+      await storage.createNotification({
+        userId: enrollmentWithDetails.parentId,
+        message: `Sua criança ${enrollmentWithDetails.childName} foi aceita na cuidoteca ${enrollmentWithDetails.cuidotecaName}!`
+      });
+      
+      res.json(enrollment);
+    } catch (error) {
+      console.error('Approve enrollment error:', error);
+      res.status(500).json({ message: 'Failed to approve enrollment' });
+    }
+  });
+
+  app.put('/api/enrollments/:id/reject', authenticateToken, async (req, res) => {
+    try {
+      if (req.user.role !== 'institution') {
+        return res.status(403).json({ message: 'Only institutions can reject enrollments' });
+      }
+      
+      const enrollmentId = parseInt(req.params.id);
+      const enrollment = await storage.updateEnrollmentStatus(enrollmentId, 'cancelled');
+      
+      // Create notification for parent
+      const enrollmentWithDetails = await storage.getEnrollmentDetails(enrollmentId);
+      await storage.createNotification({
+        userId: enrollmentWithDetails.parentId,
+        message: `A inscrição da sua criança ${enrollmentWithDetails.childName} na cuidoteca ${enrollmentWithDetails.cuidotecaName} foi rejeitada.`
+      });
+      
+      res.json(enrollment);
+    } catch (error) {
+      console.error('Reject enrollment error:', error);
+      res.status(500).json({ message: 'Failed to reject enrollment' });
+    }
+  });
+
+  // Get enrolled children for cuidotecas
+  app.get('/api/cuidotecas/enrollments', authenticateToken, async (req, res) => {
+    try {
+      if (req.user.role !== 'institution') {
+        return res.status(403).json({ message: 'Only institutions can view enrollments' });
+      }
+      
+      const enrollments = await storage.getInstitutionEnrollments(req.user.id);
+      res.json(enrollments);
+    } catch (error) {
+      console.error('Get institution enrollments error:', error);
+      res.status(500).json({ message: 'Failed to get enrollments' });
+    }
+  });
+
   // Admin routes
   app.get('/api/admin/stats', authenticateToken, requireAdmin, async (req, res) => {
     try {

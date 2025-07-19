@@ -10,6 +10,7 @@ import SchedulesList from "@/components/dashboard/schedules-list";
 import CommunityPreview from "@/components/dashboard/community-preview";
 import Notifications from "@/components/dashboard/notifications";
 import CuidotecasList from "@/components/dashboard/cuidotecas-list";
+import PendingEnrollments from "@/components/dashboard/pending-enrollments";
 
 export default function Dashboard() {
   const { user, isLoading } = useAuth();
@@ -77,7 +78,10 @@ export default function Dashboard() {
           </>
         )}
         {user.role === 'institution' && (
-          <CuidotecasList />
+          <>
+            <PendingEnrollments />
+            <CuidotecasList />
+          </>
         )}
         <CommunityPreview />
         <Notifications />

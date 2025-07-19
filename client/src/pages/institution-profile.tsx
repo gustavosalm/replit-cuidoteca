@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Building, Users, GraduationCap, ArrowLeft, Mail, Phone, MapPin } from "lucide-react";
+import CuidotecasSection from "@/components/institution/cuidotecas-section";
 
 interface Institution {
   id: number;
@@ -223,6 +224,12 @@ export default function InstitutionProfile() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Cuidotecas Section */}
+        <CuidotecasSection 
+          institutionId={parseInt(id || "0")} 
+          user={user} 
+        />
 
         {/* Connected Students */}
         <Card>

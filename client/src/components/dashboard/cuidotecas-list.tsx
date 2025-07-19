@@ -17,6 +17,10 @@ export default function CuidotecasList() {
     queryKey: ["/api/cuidotecas"],
   });
 
+  const { data: enrollments = [] } = useQuery({
+    queryKey: ["/api/cuidotecas/enrollments"],
+  });
+
   const deleteMutation = useMutation({
     mutationFn: async (cuidotecaId: number) => {
       await apiRequest("DELETE", `/api/cuidotecas/${cuidotecaId}`);
@@ -175,6 +179,39 @@ export default function CuidotecasList() {
                           </div>
                         </div>
                       )}
+
+                      {/* Show enrolled children for confirmed enrollments */}
+                      {(() => {
+                        const confirmedEnrollments = enrollments.filter(
+                          (enrollment: any) => 
+                            enrollment.cuidotecaId === cuidoteca.id && 
+                            enrollment.status === 'confirmed'
+                        );
+                        
+                        if (confirmedEnrollments.length > 0) {
+                          return (
+                            <div className="mt-3">
+                              <p className="text-xs text-muted-foreground mb-1">Crianças inscritas:</p>
+                              <div className="flex flex-wrap gap-1">
+                                {confirmedEnrollments.slice(0, 3).map((enrollment: any) => (
+                                  <span
+                                    key={enrollment.id}
+                                    className="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded"
+                                  >
+                                    {enrollment.childName} ({enrollment.childAge}a)
+                                  </span>
+                                ))}
+                                {confirmedEnrollments.length > 3 && (
+                                  <span className="inline-block bg-muted text-xs px-2 py-1 rounded">
+                                    +{confirmedEnrollments.length - 3}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
                     </CardContent>
                   </Card>
                 ))}

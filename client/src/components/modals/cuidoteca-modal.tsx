@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { X } from "lucide-react";
@@ -23,6 +24,13 @@ const DAYS_OPTIONS = [
   { id: 'friday', label: 'Sexta-feira' },
 ];
 
+const HOUR_OPTIONS = [
+  '06:00', '06:30', '07:00', '07:30', '08:00', '08:30', '09:00', '09:30',
+  '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30',
+  '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30',
+  '18:00', '18:30', '19:00', '19:30', '20:00'
+];
+
 export default function CuidotecaModal({ isOpen, onClose, cuidoteca }: CuidotecaModalProps) {
   const [formData, setFormData] = useState({
     name: cuidoteca?.name || '',
@@ -32,6 +40,8 @@ export default function CuidotecaModal({ isOpen, onClose, cuidoteca }: Cuidoteca
     maxCapacity: cuidoteca?.maxCapacity || 20,
   });
   const [caretakerInput, setCaretakerInput] = useState('');
+  const [openingHour, setOpeningHour] = useState(cuidoteca?.hours?.split('-')[0] || '');
+  const [closingHour, setClosingHour] = useState(cuidoteca?.hours?.split('-')[1] || '');
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -94,19 +104,22 @@ export default function CuidotecaModal({ isOpen, onClose, cuidoteca }: Cuidoteca
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.hours || formData.days.length === 0) {
+    if (!formData.name || !openingHour || !closingHour || formData.days.length === 0) {
       toast({
         title: "Campos obrigatórios",
-        description: "Preencha nome, horário e pelo menos um dia.",
+        description: "Preencha nome, horários e pelo menos um dia.",
         variant: "destructive",
       });
       return;
     }
 
+    const hours = `${openingHour}-${closingHour}`;
+    const dataToSubmit = { ...formData, hours };
+
     if (cuidoteca) {
-      updateMutation.mutate(formData);
+      updateMutation.mutate(dataToSubmit);
     } else {
-      createMutation.mutate(formData);
+      createMutation.mutate(dataToSubmit);
     }
   };
 
@@ -164,15 +177,37 @@ export default function CuidotecaModal({ isOpen, onClose, cuidoteca }: Cuidoteca
             />
           </div>
 
-          <div>
-            <Label htmlFor="hours">Horário de Funcionamento *</Label>
-            <Input
-              id="hours"
-              value={formData.hours}
-              onChange={(e) => setFormData(prev => ({ ...prev, hours: e.target.value }))}
-              placeholder="Ex: 08:00-12:00"
-              required
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Horário de Abertura *</Label>
+              <Select value={openingHour} onValueChange={setOpeningHour}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  {HOUR_OPTIONS.map((hour) => (
+                    <SelectItem key={hour} value={hour}>
+                      {hour}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Horário de Fechamento *</Label>
+              <Select value={closingHour} onValueChange={setClosingHour}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  {HOUR_OPTIONS.map((hour) => (
+                    <SelectItem key={hour} value={hour}>
+                      {hour}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div>
