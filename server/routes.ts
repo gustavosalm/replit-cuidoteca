@@ -134,6 +134,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get user connections (must be before the :id route)
+  app.get('/api/users/connections', authenticateToken, async (req, res) => {
+    try {
+      const connections = await storage.getUserConnections(req.user.id);
+      res.json(connections);
+    } catch (error) {
+      console.error('Get user connections error:', error);
+      res.status(500).json({ message: 'Failed to get user connections' });
+    }
+  });
+
   // Get user by ID
   app.get('/api/users/:id', authenticateToken, async (req, res) => {
     try {
@@ -142,7 +153,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Invalid user ID' });
       }
 
-      const user = await storage.getUserById(userId);
+      const user = await storage.getUser(userId);
       if (!user) {
         return res.status(404).json({ message: 'User not found' });
       }
@@ -481,16 +492,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Disconnect from institution error:', error);
       res.status(500).json({ message: 'Failed to disconnect from institution' });
-    }
-  });
-
-  app.get('/api/users/connections', authenticateToken, async (req, res) => {
-    try {
-      const connections = await storage.getUserConnections(req.user.id);
-      res.json(connections);
-    } catch (error) {
-      console.error('Get user connections error:', error);
-      res.status(500).json({ message: 'Failed to get user connections' });
     }
   });
 
