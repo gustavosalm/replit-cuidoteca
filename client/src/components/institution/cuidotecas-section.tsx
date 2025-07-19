@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { 
   School, 
   Clock, 
@@ -24,6 +26,8 @@ export default function CuidotecasSection({ institutionId, user }: CuidotecasSec
   const [enrollModalOpen, setEnrollModalOpen] = useState(false);
   const [selectedCuidoteca, setSelectedCuidoteca] = useState<any>(null);
   const [selectedChild, setSelectedChild] = useState<string>("");
+  const [selectedDays, setSelectedDays] = useState<string[]>([]);
+  const [selectedHours, setSelectedHours] = useState<string>("");
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -41,10 +45,15 @@ export default function CuidotecasSection({ institutionId, user }: CuidotecasSec
   });
 
   const enrollMutation = useMutation({
-    mutationFn: async ({ cuidotecaId, childId }: { cuidotecaId: number; childId: number }) => {
+    mutationFn: async ({ cuidotecaId, childId, requestedDays, requestedHours }: { 
+      cuidotecaId: number; 
+      childId: number; 
+      requestedDays: string[]; 
+      requestedHours: string 
+    }) => {
       return await apiRequest(`/api/cuidotecas/${cuidotecaId}/enroll`, {
         method: "POST",
-        body: JSON.stringify({ childId }),
+        body: JSON.stringify({ childId, requestedDays, requestedHours }),
         headers: { "Content-Type": "application/json" }
       });
     },
@@ -54,6 +63,8 @@ export default function CuidotecasSection({ institutionId, user }: CuidotecasSec
       setEnrollModalOpen(false);
       setSelectedChild("");
       setSelectedCuidoteca(null);
+      setSelectedDays([]);
+      setSelectedHours("");
       toast({
         title: "Inscrição enviada!",
         description: "Aguarde a aprovação da instituição.",
@@ -74,11 +85,13 @@ export default function CuidotecasSection({ institutionId, user }: CuidotecasSec
   };
 
   const handleEnroll = () => {
-    if (!selectedChild || !selectedCuidoteca) return;
+    if (!selectedChild || !selectedCuidoteca || selectedDays.length === 0 || !selectedHours) return;
     
     enrollMutation.mutate({
       cuidotecaId: selectedCuidoteca.id,
-      childId: parseInt(selectedChild)
+      childId: parseInt(selectedChild),
+      requestedDays: selectedDays,
+      requestedHours: selectedHours
     });
   };
 
@@ -226,13 +239,57 @@ export default function CuidotecasSection({ institutionId, user }: CuidotecasSec
               </Select>
             </div>
 
+            <div>
+              <label className="text-sm font-medium mb-3 block">Selecione os dias:</label>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { id: 'monday', label: 'Segunda' },
+                  { id: 'tuesday', label: 'Terça' },
+                  { id: 'wednesday', label: 'Quarta' },
+                  { id: 'thursday', label: 'Quinta' },
+                  { id: 'friday', label: 'Sexta' },
+                ].map((day) => (
+                  <div key={day.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={day.id}
+                      checked={selectedDays.includes(day.id)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setSelectedDays([...selectedDays, day.id]);
+                        } else {
+                          setSelectedDays(selectedDays.filter(d => d !== day.id));
+                        }
+                      }}
+                    />
+                    <Label htmlFor={day.id} className="text-sm">
+                      {day.label}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium">Selecione o horário:</label>
+              <Select value={selectedHours} onValueChange={setSelectedHours}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Escolha o horário" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="morning">Manhã (8h-12h)</SelectItem>
+                  <SelectItem value="afternoon">Tarde (13h-17h)</SelectItem>
+                  <SelectItem value="full">Período integral (8h-17h)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="flex justify-end space-x-2 pt-4">
               <Button variant="outline" onClick={() => setEnrollModalOpen(false)}>
                 Cancelar
               </Button>
               <Button 
                 onClick={handleEnroll}
-                disabled={!selectedChild || enrollMutation.isPending}
+                disabled={!selectedChild || selectedDays.length === 0 || !selectedHours || enrollMutation.isPending}
               >
                 {enrollMutation.isPending ? "Enviando..." : "Inscrever"}
               </Button>

@@ -16,6 +16,26 @@ export default function PendingEnrollments() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  const formatDays = (days: string[]) => {
+    const dayNames: { [key: string]: string } = {
+      monday: 'Seg',
+      tuesday: 'Ter',
+      wednesday: 'Qua',
+      thursday: 'Qui',
+      friday: 'Sex',
+    };
+    return days.map(day => dayNames[day] || day).join(', ');
+  };
+
+  const formatSchedule = (schedule: string) => {
+    const scheduleNames: { [key: string]: string } = {
+      morning: 'Manhã (8h-12h)',
+      afternoon: 'Tarde (13h-17h)',
+      full: 'Período integral (8h-17h)',
+    };
+    return scheduleNames[schedule] || schedule;
+  };
+
   const { data: pendingEnrollments = [], isLoading } = useQuery({
     queryKey: ["/api/enrollments/pending"],
   });
@@ -128,6 +148,8 @@ export default function PendingEnrollments() {
                         </div>
                         <p>Cuidoteca: {enrollment.cuidoteca?.name}</p>
                         <p>Idade: {enrollment.child?.age} anos</p>
+                        <p>Dias solicitados: {formatDays(enrollment.requestedDays || [])}</p>
+                        <p>Horário solicitado: {formatSchedule(enrollment.requestedHours)}</p>
                         {enrollment.child?.specialNeeds && (
                           <p>Necessidades especiais: {enrollment.child.specialNeeds}</p>
                         )}

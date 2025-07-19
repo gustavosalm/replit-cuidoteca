@@ -84,6 +84,8 @@ export const cuidotecaEnrollments = pgTable("cuidoteca_enrollments", {
   childId: integer("child_id").references(() => children.id).notNull(),
   enrollmentDate: timestamp("enrollment_date").defaultNow().notNull(),
   status: scheduleStatusEnum("status").notNull().default("pending"),
+  requestedDays: text("requested_days").array().notNull(),
+  requestedHours: text("requested_hours").notNull(),
 });
 
 // Relations

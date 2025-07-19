@@ -446,12 +446,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Cuidoteca routes
   app.get('/api/cuidotecas', authenticateToken, async (req, res) => {
     try {
-      const institutionId = req.user.role === 'institution' ? req.user.id : req.query.institutionId;
-      if (!institutionId) {
-        return res.status(400).json({ message: 'Institution ID required' });
+      if (req.user.role === 'institution') {
+        const cuidotecas = await storage.getCuidotecasByInstitution(req.user.id);
+        res.json(cuidotecas);
+      } else {
+        // For parents, return all cuidotecas
+        const cuidotecas = await storage.getAllCuidotecas();
+        res.json(cuidotecas);
       }
-      const cuidotecas = await storage.getCuidotecasByInstitution(parseInt(institutionId as string));
-      res.json(cuidotecas);
     } catch (error) {
       console.error('Get cuidotecas error:', error);
       res.status(500).json({ message: 'Failed to get cuidotecas' });
@@ -548,12 +550,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const cuidotecaId = parseInt(req.params.id);
-      const { childId } = req.body;
+      const { childId, requestedDays, requestedHours } = req.body;
+      
+      // Validate child belongs to parent
+      const child = await storage.getChild(childId);
+      if (!child || child.parentId !== req.user.id) {
+        return res.status(403).json({ message: 'Child not found or not owned by user' });
+      }
       
       const enrollment = await storage.enrollChildInCuidoteca({
         cuidotecaId,
         childId,
-        status: 'pending'
+        status: 'pending',
+        requestedDays,
+        requestedHours
       });
       
       res.status(201).json(enrollment);

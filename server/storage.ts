@@ -365,6 +365,10 @@ export class DatabaseStorage implements IStorage {
       .where(eq(cuidotecas.institutionId, institutionId));
   }
 
+  async getAllCuidotecas(): Promise<Cuidoteca[]> {
+    return await db.select().from(cuidotecas);
+  }
+
   async getCuidoteca(id: number): Promise<Cuidoteca | undefined> {
     const [cuidoteca] = await db
       .select()
@@ -435,6 +439,8 @@ export class DatabaseStorage implements IStorage {
       .select({
         id: cuidotecaEnrollments.id,
         status: cuidotecaEnrollments.status,
+        requestedDays: cuidotecaEnrollments.requestedDays,
+        requestedHours: cuidotecaEnrollments.requestedHours,
         child: {
           id: children.id,
           name: children.name,
