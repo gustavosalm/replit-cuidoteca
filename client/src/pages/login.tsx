@@ -26,11 +26,14 @@ export default function Login() {
 
     try {
       await login(formData.email, formData.password);
-      setLocation("/");
       toast({
         title: "Login realizado com sucesso!",
         description: "Bem-vinda de volta à Cuidoteca",
       });
+      // Small delay to ensure auth state is updated
+      setTimeout(() => {
+        setLocation("/");
+      }, 100);
     } catch (error) {
       toast({
         title: "Erro no login",

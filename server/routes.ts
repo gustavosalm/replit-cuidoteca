@@ -463,6 +463,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/cuidotecas/:id', authenticateToken, async (req, res) => {
     try {
       const cuidotecaId = parseInt(req.params.id);
+      if (isNaN(cuidotecaId)) {
+        return res.status(400).json({ message: 'Invalid cuidoteca ID' });
+      }
+      
       const cuidoteca = await storage.getCuidoteca(cuidotecaId);
       if (!cuidoteca) {
         return res.status(404).json({ message: 'Cuidoteca not found' });
@@ -651,8 +655,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: 'Only institutions can view enrollments' });
       }
       
-      const enrollments = await storage.getInstitutionEnrollments(req.user.id);
-      res.json(enrollments);
+      // Get all enrollments for cuidotecas owned by this institution
+      const cuidotecas = await storage.getCuidotecasByInstitution(req.user.id);
+      const allEnrollments = [];
+      
+      for (const cuidoteca of cuidotecas) {
+        const enrollments = await storage.getCuidotecaEnrollments(cuidoteca.id);
+        allEnrollments.push(...enrollments);
+      }
+      
+      res.json(allEnrollments);
     } catch (error) {
       console.error('Get institution enrollments error:', error);
       res.status(500).json({ message: 'Failed to get enrollments' });

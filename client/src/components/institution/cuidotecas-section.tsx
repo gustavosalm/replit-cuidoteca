@@ -248,7 +248,9 @@ export default function CuidotecasSection({ institutionId, user }: CuidotecasSec
                   { id: 'wednesday', label: 'Quarta' },
                   { id: 'thursday', label: 'Quinta' },
                   { id: 'friday', label: 'Sexta' },
-                ].map((day) => (
+                ].filter(day => 
+                  selectedCuidoteca?.days?.includes(day.id)
+                ).map((day) => (
                   <div key={day.id} className="flex items-center space-x-2">
                     <Checkbox
                       id={day.id}
@@ -267,6 +269,9 @@ export default function CuidotecasSection({ institutionId, user }: CuidotecasSec
                   </div>
                 ))}
               </div>
+              {selectedCuidoteca?.days?.length === 0 && (
+                <p className="text-sm text-muted-foreground">Nenhum dia disponível para esta cuidoteca.</p>
+              )}
             </div>
 
             <div>
@@ -276,11 +281,20 @@ export default function CuidotecasSection({ institutionId, user }: CuidotecasSec
                   <SelectValue placeholder="Escolha o horário" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="morning">Manhã (8h-12h)</SelectItem>
-                  <SelectItem value="afternoon">Tarde (13h-17h)</SelectItem>
-                  <SelectItem value="full">Período integral (8h-17h)</SelectItem>
+                  {selectedCuidoteca?.hours?.includes('8') && (
+                    <SelectItem value="morning">Manhã (8h-12h)</SelectItem>
+                  )}
+                  {selectedCuidoteca?.hours?.includes('13') && (
+                    <SelectItem value="afternoon">Tarde (13h-17h)</SelectItem>
+                  )}
+                  {selectedCuidoteca?.hours?.includes('8') && selectedCuidoteca?.hours?.includes('17') && (
+                    <SelectItem value="full">Período integral (8h-17h)</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground mt-1">
+                Cuidoteca funciona: {selectedCuidoteca?.hours}
+              </p>
             </div>
 
             <div className="flex justify-end space-x-2 pt-4">
