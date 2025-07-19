@@ -72,7 +72,12 @@ export const usersRelations = relations(users, ({ many }) => ({
   children: many(children),
   posts: many(posts),
   notifications: many(notifications),
-  universityConnections: many(universityConnections),
+  userConnections: many(universityConnections, {
+    relationName: "userConnections",
+  }),
+  institutionConnections: many(universityConnections, {
+    relationName: "institutionConnections",
+  }),
 }));
 
 export const childrenRelations = relations(children, ({ one, many }) => ({
@@ -108,10 +113,12 @@ export const universityConnectionsRelations = relations(universityConnections, (
   user: one(users, {
     fields: [universityConnections.userId],
     references: [users.id],
+    relationName: "userConnections",
   }),
   institution: one(users, {
     fields: [universityConnections.institutionId],
     references: [users.id],
+    relationName: "institutionConnections",
   }),
 }));
 
@@ -201,6 +208,6 @@ export type ScheduleWithChild = Schedule & {
 };
 
 export type InstitutionWithConnections = User & {
-  universityConnections: UniversityConnection[];
+  institutionConnections: UniversityConnection[];
   connectionCount?: number;
 };

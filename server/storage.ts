@@ -255,13 +255,13 @@ export class DatabaseStorage implements IStorage {
     const institutions = await db.query.users.findMany({
       where: eq(users.role, "institution"),
       with: {
-        universityConnections: true,
+        institutionConnections: true,
       },
     });
 
     return institutions.map(institution => ({
       ...institution,
-      connectionCount: institution.universityConnections.length,
+      connectionCount: institution.institutionConnections.length,
     }));
   }
 
@@ -269,7 +269,7 @@ export class DatabaseStorage implements IStorage {
     const institution = await db.query.users.findFirst({
       where: and(eq(users.id, id), eq(users.role, "institution")),
       with: {
-        universityConnections: true,
+        institutionConnections: true,
       },
     });
 
@@ -277,7 +277,7 @@ export class DatabaseStorage implements IStorage {
 
     return {
       ...institution,
-      connectionCount: institution.universityConnections.length,
+      connectionCount: institution.institutionConnections.length,
     };
   }
 
