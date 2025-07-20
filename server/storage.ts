@@ -157,9 +157,18 @@ export class DatabaseStorage implements IStorage {
       address: users.address,
       role: users.role,
       institutionName: users.institutionName,
-      // Exclude sensitive fields like password
+      memberCount: users.memberCount,
+      profilePicture: users.profilePicture,
+      createdAt: users.createdAt,
+      // Exclude only password field
+      password: users.password // This will be excluded from the response
     }).from(users).where(eq(users.id, id));
-    return user || undefined;
+    
+    if (!user) return undefined;
+    
+    // Remove password from response for security
+    const { password, ...publicUser } = user;
+    return publicUser as User;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
