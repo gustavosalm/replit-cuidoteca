@@ -17,6 +17,7 @@ import InstitutionProfile from "@/pages/institution-profile";
 import PublicProfile from "@/pages/public-profile";
 import CuidotecaDetail from "@/pages/cuidoteca-detail";
 import Messages from "@/pages/messages";
+import Informacoes from "@/pages/informacoes";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -36,6 +37,7 @@ function Router() {
       <Route path="/cuidotecas/:id" component={CuidotecaDetail} />
       <Route path="/profile/:id" component={PublicProfile} />
       <Route path="/messages" component={Messages} />
+      <Route path="/informacoes" component={Informacoes} />
       <Route component={NotFound} />
     </Switch>
   );

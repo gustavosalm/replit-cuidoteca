@@ -6,7 +6,7 @@ import { posts } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { insertUserSchema, insertParentSchema, insertInstitutionSchema, insertCuidadorSchema, insertChildSchema, insertEventSchema, insertEventParticipationSchema, insertPostSchema, insertNotificationSchema } from "@shared/schema";
+import { insertUserSchema, insertParentSchema, insertInstitutionSchema, insertCuidadorSchema, insertChildSchema, insertEventSchema, insertEventParticipationSchema, insertPostSchema, insertNotificationSchema, insertInstitutionDocumentSchema } from "@shared/schema";
 
 // Extend Express Request interface to include user property
 declare global {
@@ -1672,6 +1672,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Get institution enrollments error:', error);
       res.status(500).json({ message: 'Failed to get enrollments' });
+    }
+  });
+
+  // Document routes
+  app.get('/api/documents', authenticateToken, async (req, res) => {
+    try {
+      if (req.user.role === 'institution') {
+        // Institutions can see their own documents
+        const documents = await storage.getInstitutionDocuments(req.user.id);
+        res.json(documents);
+      } else {
+        // Other users see all public documents
+        const documents = await storage.getAllPublicDocuments();
+        res.json(documents);
+      }
+    } catch (error) {
+      console.error('Get documents error:', error);
+      res.status(500).json({ message: 'Failed to get documents' });
+    }
+  });
+
+  app.post('/api/documents', authenticateToken, async (req, res) => {
+    try {
+      if (req.user.role !== 'institution') {
+        return res.status(403).json({ message: 'Only institutions can upload documents' });
+      }
+
+      const documentData = insertInstitutionDocumentSchema.parse({
+        ...req.body,
+        institutionId: req.user.id
+      });
+
+      const document = await storage.createInstitutionDocument(documentData);
+      res.status(201).json(document);
+    } catch (error) {
+      console.error('Create document error:', error);
+      res.status(500).json({ message: 'Failed to create document' });
+    }
+  });
+
+  app.put('/api/documents/:id', authenticateToken, async (req, res) => {
+    try {
+      if (req.user.role !== 'institution') {
+        return res.status(403).json({ message: 'Only institutions can update documents' });
+      }
+
+      const documentId = parseInt(req.params.id);
+      const updateData = insertInstitutionDocumentSchema.partial().parse(req.body);
+
+      const document = await storage.updateInstitutionDocument(documentId, updateData);
+      res.json(document);
+    } catch (error) {
+      console.error('Update document error:', error);
+      res.status(500).json({ message: 'Failed to update document' });
+    }
+  });
+
+  app.delete('/api/documents/:id', authenticateToken, async (req, res) => {
+    try {
+      if (req.user.role !== 'institution') {
+        return res.status(403).json({ message: 'Only institutions can delete documents' });
+      }
+
+      const documentId = parseInt(req.params.id);
+      await storage.deleteInstitutionDocument(documentId);
+      res.json({ message: 'Document deleted successfully' });
+    } catch (error) {
+      console.error('Delete document error:', error);
+      res.status(500).json({ message: 'Failed to delete document' });
     }
   });
 

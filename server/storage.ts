@@ -13,6 +13,7 @@ import {
   cuidotecaEnrollments,
   cuidadorEnrollments,
   messages,
+  institutionDocuments,
   type User, 
   type InsertUser,
   type Child,
@@ -41,6 +42,8 @@ import {
   type InsertCuidadorEnrollment,
   type Message,
   type InsertMessage,
+  type InstitutionDocument,
+  type InsertInstitutionDocument,
   type UserWithChildren,
   type ChildWithEventParticipations,
   type PostWithAuthor,
@@ -166,6 +169,13 @@ export interface IStorage {
   getAcceptedUserConnections(userId: number): Promise<User[]>;
   getUserConnectionBetweenUsers(user1Id: number, user2Id: number): Promise<UserConnection | undefined>;
   removeUserConnection(connectionId: number): Promise<void>;
+
+  // Document operations
+  getInstitutionDocuments(institutionId: number): Promise<InstitutionDocument[]>;
+  getAllPublicDocuments(): Promise<InstitutionDocument[]>;
+  createInstitutionDocument(document: InsertInstitutionDocument): Promise<InstitutionDocument>;
+  updateInstitutionDocument(id: number, document: Partial<InsertInstitutionDocument>): Promise<InstitutionDocument>;
+  deleteInstitutionDocument(id: number): Promise<void>;
 
   // Admin operations
   getAdminStats(): Promise<{
@@ -428,11 +438,11 @@ export class DatabaseStorage implements IStorage {
 
     const userIds = connectedUsers.map(conn => conn.userId);
 
-    // Get all posts from connected users
+    // Get all posts from connected users where the post is associated with this institution
     return await db.query.posts.findMany({
       where: and(
-        eq(posts.institutionId, institutionId),
-        // Posts where author is connected to this institution
+        eq(posts.institutionId, institutionId)
+        // This will include all posts made in this institution's community by connected users
       ),
       with: {
         author: true,
@@ -1349,6 +1359,64 @@ export class DatabaseStorage implements IStorage {
       .where(eq(universityConnections.institutionId, institutionId));
     
     return connectedUsers.map(row => row.users);
+  }
+
+  // Document operations
+  async getInstitutionDocuments(institutionId: number): Promise<InstitutionDocument[]> {
+    const documents = await db
+      .select()
+      .from(institutionDocuments)
+      .where(eq(institutionDocuments.institutionId, institutionId))
+      .orderBy(desc(institutionDocuments.createdAt));
+    
+    return documents;
+  }
+
+  async getAllPublicDocuments(): Promise<InstitutionDocument[]> {
+    const documents = await db
+      .select({
+        id: institutionDocuments.id,
+        institutionId: institutionDocuments.institutionId,
+        title: institutionDocuments.title,
+        description: institutionDocuments.description,
+        fileName: institutionDocuments.fileName,
+        fileUrl: institutionDocuments.fileUrl,
+        fileSize: institutionDocuments.fileSize,
+        fileType: institutionDocuments.fileType,
+        isPublic: institutionDocuments.isPublic,
+        createdAt: institutionDocuments.createdAt,
+        institutionName: users.institutionName,
+        authorName: users.name,
+      })
+      .from(institutionDocuments)
+      .innerJoin(users, eq(institutionDocuments.institutionId, users.id))
+      .where(eq(institutionDocuments.isPublic, true))
+      .orderBy(desc(institutionDocuments.createdAt));
+    
+    return documents;
+  }
+
+  async createInstitutionDocument(document: InsertInstitutionDocument): Promise<InstitutionDocument> {
+    const [newDocument] = await db
+      .insert(institutionDocuments)
+      .values(document)
+      .returning();
+    
+    return newDocument;
+  }
+
+  async updateInstitutionDocument(id: number, document: Partial<InsertInstitutionDocument>): Promise<InstitutionDocument> {
+    const [updatedDocument] = await db
+      .update(institutionDocuments)
+      .set(document)
+      .where(eq(institutionDocuments.id, id))
+      .returning();
+    
+    return updatedDocument;
+  }
+
+  async deleteInstitutionDocument(id: number): Promise<void> {
+    await db.delete(institutionDocuments).where(eq(institutionDocuments.id, id));
   }
 }
 

@@ -140,6 +140,19 @@ export const cuidadorEnrollments = pgTable("cuidador_enrollments", {
   requestedHours: text("requested_hours").notNull(),
 });
 
+export const institutionDocuments = pgTable("institution_documents", {
+  id: serial("id").primaryKey(),
+  institutionId: integer("institution_id").references(() => users.id).notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  fileName: text("file_name").notNull(),
+  fileUrl: text("file_url").notNull(),
+  fileSize: integer("file_size").notNull(),
+  fileType: text("file_type").notNull(),
+  isPublic: boolean("is_public").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const messages = pgTable("messages", {
   id: serial("id").primaryKey(),
   senderId: integer("sender_id").references(() => users.id).notNull(),
@@ -180,6 +193,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   eventParticipations: many(eventParticipations),
   sentMessages: many(messages, { relationName: "sentMessages" }),
   receivedMessages: many(messages, { relationName: "receivedMessages" }),
+  institutionDocuments: many(institutionDocuments),
 }));
 
 export const childrenRelations = relations(children, ({ one, many }) => ({
@@ -289,6 +303,13 @@ export const messagesRelations = relations(messages, ({ one }) => ({
   }),
 }));
 
+export const institutionDocumentsRelations = relations(institutionDocuments, ({ one }) => ({
+  institution: one(users, {
+    fields: [institutionDocuments.institutionId],
+    references: [users.id],
+  }),
+}));
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -384,6 +405,11 @@ export const insertUserConnectionSchema = createInsertSchema(userConnections).om
   acceptedAt: true,
 });
 
+export const insertInstitutionDocumentSchema = createInsertSchema(institutionDocuments).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertMessageSchema = createInsertSchema(messages).omit({
   id: true,
   read: true,
@@ -422,6 +448,8 @@ export type UserConnection = typeof userConnections.$inferSelect;
 export type InsertUserConnection = z.infer<typeof insertUserConnectionSchema>;
 export type Message = typeof messages.$inferSelect;
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
+export type InstitutionDocument = typeof institutionDocuments.$inferSelect;
+export type InsertInstitutionDocument = z.infer<typeof insertInstitutionDocumentSchema>;
 
 // Extended types for queries with relations
 export type UserWithChildren = User & {
