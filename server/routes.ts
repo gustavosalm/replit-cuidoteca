@@ -338,6 +338,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Check if users are connected
+  app.get('/api/users/:id/connection-status', authenticateToken, async (req, res) => {
+    try {
+      const targetUserId = parseInt(req.params.id);
+      const currentUserId = req.user.id;
+      
+      // Find existing connection between users
+      const connection = await storage.getUserConnectionBetweenUsers(currentUserId, targetUserId);
+      
+      res.json({
+        connected: connection && connection.status === 'accepted',
+        pending: connection && connection.status === 'pending',
+        connectionId: connection?.id || null
+      });
+    } catch (error) {
+      console.error('Check connection status error:', error);
+      res.status(500).json({ message: 'Failed to check connection status' });
+    }
+  });
+
+  // Remove connection
+  app.delete('/api/connections/:id', authenticateToken, async (req, res) => {
+    try {
+      const connectionId = parseInt(req.params.id);
+      const currentUser = req.user;
+      
+      // Get connection to verify user can remove it
+      const connection = await storage.getUserConnectionById(connectionId);
+      if (!connection) {
+        return res.status(404).json({ message: 'Connection not found' });
+      }
+      
+      // Verify current user is part of this connection
+      if (connection.requesterId !== currentUser.id && connection.recipientId !== currentUser.id) {
+        return res.status(403).json({ message: 'Unauthorized to remove this connection' });
+      }
+      
+      // Remove the connection
+      await storage.removeUserConnection(connectionId);
+      
+      res.json({ message: 'Connection removed successfully' });
+    } catch (error) {
+      console.error('Remove connection error:', error);
+      res.status(500).json({ message: 'Failed to remove connection' });
+    }
+  });
+
   // Get user by ID
   app.get('/api/users/:id', authenticateToken, async (req, res) => {
     try {

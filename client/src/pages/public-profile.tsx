@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft, Mail, Phone, MapPin, GraduationCap, User, Building, MessageCircle, UserPlus, Users } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { ArrowLeft, Mail, Phone, MapPin, GraduationCap, User, Building, MessageCircle, UserPlus, Users, UserMinus } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -51,6 +52,11 @@ export default function PublicProfile() {
     enabled: !!id,
   });
 
+  const { data: connectionStatus } = useQuery({
+    queryKey: ["/api/users", id, "connection-status"],
+    enabled: !!id && !!currentUser && currentUser.id !== parseInt(id!),
+  });
+
   // Check if current user can connect to this user
   const canConnect = currentUser && user && 
     currentUser.id !== user.id && 
@@ -71,15 +77,36 @@ export default function PublicProfile() {
     },
     onSuccess: () => {
       toast({
-        title: "Conexão enviada!",
-        description: "Sua solicitação de conexão foi enviada com sucesso.",
+        title: "Solicitação enviada!",
+        description: "A solicitação de conexão foi enviada com sucesso.",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/users/connections"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/users", id, "connection-status"] });
     },
     onError: () => {
       toast({
-        title: "Erro ao conectar",
+        title: "Erro",
         description: "Não foi possível enviar a solicitação de conexão.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const removeConnectionMutation = useMutation({
+    mutationFn: async (connectionId: number) => {
+      await apiRequest("DELETE", `/api/connections/${connectionId}`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Conexão removida",
+        description: "A conexão foi removida com sucesso.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/users", id, "connection-status"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/users", id, "connections"] });
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Não foi possível remover a conexão.",
         variant: "destructive",
       });
     },
@@ -259,14 +286,58 @@ export default function PublicProfile() {
                   <MessageCircle className="h-4 w-4 mr-2" />
                   Enviar Mensagem
                 </Button>
-                <Button 
-                  variant="outline"
-                  onClick={() => connectMutation.mutate()}
-                  className="flex-1"
-                >
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Conectar
-                </Button>
+                
+                {/* Connection Status Based Actions */}
+                {connectionStatus?.connected ? (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button 
+                        variant="outline"
+                        className="flex-1"
+                      >
+                        <UserMinus className="h-4 w-4 mr-2" />
+                        Remover Conexão
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Remover conexão</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Tem certeza que deseja remover a conexão com {user.name}? 
+                          Esta ação não pode ser desfeita e vocês não poderão mais se comunicar diretamente.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => removeConnectionMutation.mutate(connectionStatus.connectionId)}
+                          disabled={removeConnectionMutation.isPending}
+                        >
+                          {removeConnectionMutation.isPending ? "Removendo..." : "Remover"}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                ) : connectionStatus?.pending ? (
+                  <Button 
+                    variant="outline"
+                    className="flex-1"
+                    disabled
+                  >
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Solicitação Enviada
+                  </Button>
+                ) : (
+                  <Button 
+                    variant="outline"
+                    onClick={() => connectMutation.mutate()}
+                    disabled={connectMutation.isPending}
+                    className="flex-1"
+                  >
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    {connectMutation.isPending ? "Conectando..." : "Conectar"}
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>

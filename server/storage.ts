@@ -145,6 +145,8 @@ export interface IStorage {
   updateUserConnectionStatus(id: number, status: string, acceptedAt?: Date): Promise<UserConnection>;
   getUserConnectionsByUser(userId: number): Promise<UserConnection[]>;
   getAcceptedUserConnections(userId: number): Promise<User[]>;
+  getUserConnectionBetweenUsers(user1Id: number, user2Id: number): Promise<UserConnection | undefined>;
+  removeUserConnection(connectionId: number): Promise<void>;
 
   // Admin operations
   getAdminStats(): Promise<{
@@ -1149,6 +1151,35 @@ export class DatabaseStorage implements IStorage {
     );
 
     return uniqueUsers;
+  }
+
+  async getUserConnectionBetweenUsers(user1Id: number, user2Id: number): Promise<UserConnection | undefined> {
+    const [connection] = await db
+      .select()
+      .from(userConnections)
+      .where(
+        and(
+          eq(userConnections.requesterId, user1Id),
+          eq(userConnections.recipientId, user2Id)
+        )
+      )
+      .union(
+        db
+          .select()
+          .from(userConnections)
+          .where(
+            and(
+              eq(userConnections.requesterId, user2Id),
+              eq(userConnections.recipientId, user1Id)
+            )
+          )
+      );
+    
+    return connection || undefined;
+  }
+
+  async removeUserConnection(connectionId: number): Promise<void> {
+    await db.delete(userConnections).where(eq(userConnections.id, connectionId));
   }
 }
 
