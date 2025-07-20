@@ -7,7 +7,7 @@ export default function MobileNav() {
 
   const navItems = [
     { path: "/", icon: Home, label: "Início" },
-    { path: "/scheduling", icon: Calendar, label: "Agenda" },
+    { path: "/events", icon: Calendar, label: "Eventos" },
     { path: "/community", icon: Users, label: "Comunidade" },
     { path: "/institutions", icon: Building, label: "Universidades" },
     { path: "/profile", icon: User, label: "Perfil" },

@@ -35,13 +35,23 @@ export const children = pgTable("children", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const schedules = pgTable("schedules", {
+export const events = pgTable("events", {
   id: serial("id").primaryKey(),
-  childId: integer("child_id").references(() => children.id).notNull(),
+  institutionId: integer("institution_id").references(() => users.id).notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
   dayOfWeek: dayOfWeekEnum("day_of_week").notNull(),
   period: periodEnum("period").notNull(),
-  status: scheduleStatusEnum("status").notNull().default("pending"),
   observations: text("observations"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const eventParticipations = pgTable("event_participations", {
+  id: serial("id").primaryKey(),
+  eventId: integer("event_id").references(() => events.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  childId: integer("child_id").references(() => children.id),
+  status: scheduleStatusEnum("status").notNull().default("pending"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -121,6 +131,8 @@ export const usersRelations = relations(users, ({ many }) => ({
     relationName: "institutionConnections",
   }),
   cuidotecas: many(cuidotecas),
+  events: many(events),
+  eventParticipations: many(eventParticipations),
   sentMessages: many(messages, { relationName: "sentMessages" }),
   receivedMessages: many(messages, { relationName: "receivedMessages" }),
 }));
@@ -130,12 +142,28 @@ export const childrenRelations = relations(children, ({ one, many }) => ({
     fields: [children.parentId],
     references: [users.id],
   }),
-  schedules: many(schedules),
+  eventParticipations: many(eventParticipations),
 }));
 
-export const schedulesRelations = relations(schedules, ({ one }) => ({
+export const eventsRelations = relations(events, ({ one, many }) => ({
+  institution: one(users, {
+    fields: [events.institutionId],
+    references: [users.id],
+  }),
+  participations: many(eventParticipations),
+}));
+
+export const eventParticipationsRelations = relations(eventParticipations, ({ one }) => ({
+  event: one(events, {
+    fields: [eventParticipations.eventId],
+    references: [events.id],
+  }),
+  user: one(users, {
+    fields: [eventParticipations.userId],
+    references: [users.id],
+  }),
   child: one(children, {
-    fields: [schedules.childId],
+    fields: [eventParticipations.childId],
     references: [children.id],
   }),
 }));
@@ -235,7 +263,12 @@ export const insertChildSchema = createInsertSchema(children).omit({
   createdAt: true,
 });
 
-export const insertScheduleSchema = createInsertSchema(schedules).omit({
+export const insertEventSchema = createInsertSchema(events).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertEventParticipationSchema = createInsertSchema(eventParticipations).omit({
   id: true,
   createdAt: true,
 });
@@ -286,8 +319,10 @@ export type InsertInstitution = z.infer<typeof insertInstitutionSchema>;
 export type InsertCuidador = z.infer<typeof insertCuidadorSchema>;
 export type Child = typeof children.$inferSelect;
 export type InsertChild = z.infer<typeof insertChildSchema>;
-export type Schedule = typeof schedules.$inferSelect;
-export type InsertSchedule = z.infer<typeof insertScheduleSchema>;
+export type Event = typeof events.$inferSelect;
+export type InsertEvent = z.infer<typeof insertEventSchema>;
+export type EventParticipation = typeof eventParticipations.$inferSelect;
+export type InsertEventParticipation = z.infer<typeof insertEventParticipationSchema>;
 export type Post = typeof posts.$inferSelect;
 export type InsertPost = z.infer<typeof insertPostSchema>;
 export type Notification = typeof notifications.$inferSelect;
@@ -308,8 +343,12 @@ export type UserWithChildren = User & {
   children: Child[];
 };
 
-export type ChildWithSchedules = Child & {
-  schedules: Schedule[];
+export type ChildWithEventParticipations = Child & {
+  eventParticipations: EventParticipation[];
+};
+
+export type EventWithParticipations = Event & {
+  participations: EventParticipation[];
 };
 
 export type PostWithAuthor = Post & {

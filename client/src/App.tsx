@@ -9,7 +9,7 @@ import Login from "@/pages/login";
 import Register from "@/pages/register";
 import Admin from "@/pages/admin";
 import Community from "@/pages/community";
-import Scheduling from "@/pages/scheduling";
+import Events from "@/pages/events";
 import Profile from "@/pages/profile";
 import Institutions from "@/pages/institutions";
 import InstitutionProfile from "@/pages/institution-profile";
@@ -27,7 +27,7 @@ function Router() {
       <Route path="/register" component={Register} />
       <Route path="/admin" component={Admin} />
       <Route path="/community" component={Community} />
-      <Route path="/scheduling" component={Scheduling} />
+      <Route path="/events" component={Events} />
       <Route path="/profile" component={Profile} />
       <Route path="/institutions" component={Institutions} />
       <Route path="/institutions/:id" component={InstitutionProfile} />

@@ -27,10 +27,10 @@ export default function QuickActions() {
                   <Button
                     variant="outline"
                     className="flex items-center p-4 h-auto"
-                    onClick={() => setLocation("/scheduling")}
+                    onClick={() => setLocation("/events")}
                   >
                     <Plus className="h-5 w-5 text-primary mr-3" />
-                    <span>Novo Agendamento</span>
+                    <span>Ver Eventos</span>
                   </Button>
                   
                   <Button

@@ -31,14 +31,12 @@ export default function Header() {
               >
                 Dashboard
               </Button>
-              {user?.role === "institution" && (
-                <Button
-                  variant={location === "/scheduling" ? "default" : "ghost"}
-                  onClick={() => setLocation("/scheduling")}
-                >
-                  Eventos
-                </Button>
-              )}
+              <Button
+                variant={location === "/events" ? "default" : "ghost"}
+                onClick={() => setLocation("/events")}
+              >
+                Eventos
+              </Button>
               <Button
                 variant={location === "/community" ? "default" : "ghost"}
                 onClick={() => setLocation("/community")}

@@ -6,7 +6,7 @@ import MobileNav from "@/components/layout/mobile-nav";
 import StatsCards from "@/components/dashboard/stats-cards";
 import QuickActions from "@/components/dashboard/quick-actions";
 import ChildrenList from "@/components/dashboard/children-list";
-import SchedulesList from "@/components/dashboard/schedules-list";
+import EventsList from "@/components/dashboard/events-list";
 import CommunityPreview from "@/components/dashboard/community-preview";
 import Notifications from "@/components/dashboard/notifications";
 import CuidotecasList from "@/components/dashboard/cuidotecas-list";
@@ -76,7 +76,7 @@ export default function Dashboard() {
         {user.role === 'parent' && (
           <>
             <ChildrenList />
-            <SchedulesList />
+            <EventsList />
           </>
         )}
         {user.role === 'institution' && (

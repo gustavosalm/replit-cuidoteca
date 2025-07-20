@@ -1,7 +1,8 @@
 import { 
   users, 
   children, 
-  schedules, 
+  events,
+  eventParticipations, 
   posts, 
   notifications,
   universityConnections,
@@ -13,8 +14,10 @@ import {
   type InsertUser,
   type Child,
   type InsertChild,
-  type Schedule,
-  type InsertSchedule,
+  type Event,
+  type InsertEvent,
+  type EventParticipation,
+  type InsertEventParticipation,
   type Post,
   type InsertPost,
   type Notification,
@@ -30,9 +33,9 @@ import {
   type Message,
   type InsertMessage,
   type UserWithChildren,
-  type ChildWithSchedules,
+  type ChildWithEventParticipations,
   type PostWithAuthor,
-  type ScheduleWithChild,
+  type EventWithParticipations,
   type InstitutionWithConnections,
 } from "@shared/schema";
 import { db } from "./db";
@@ -53,15 +56,23 @@ export interface IStorage {
   createChild(child: InsertChild): Promise<Child>;
   updateChild(id: number, child: Partial<InsertChild>): Promise<Child>;
   deleteChild(id: number): Promise<void>;
-  getChildWithSchedules(id: number): Promise<ChildWithSchedules | undefined>;
+  getChildWithEventParticipations(id: number): Promise<ChildWithEventParticipations | undefined>;
   
-  // Schedule operations
-  getSchedule(id: number): Promise<Schedule | undefined>;
-  getSchedulesByChild(childId: number): Promise<Schedule[]>;
-  getSchedulesByParent(parentId: number): Promise<ScheduleWithChild[]>;
-  createSchedule(schedule: InsertSchedule): Promise<Schedule>;
-  updateSchedule(id: number, schedule: Partial<InsertSchedule>): Promise<Schedule>;
-  deleteSchedule(id: number): Promise<void>;
+  // Event operations
+  getEvent(id: number): Promise<Event | undefined>;
+  getEventsByInstitution(institutionId: number): Promise<EventWithParticipations[]>;
+  getEventsWithParticipationsByUser(userId: number): Promise<EventWithParticipations[]>;
+  createEvent(event: InsertEvent): Promise<Event>;
+  updateEvent(id: number, event: Partial<InsertEvent>): Promise<Event>;
+  deleteEvent(id: number): Promise<void>;
+
+  // Event Participation operations
+  getEventParticipation(id: number): Promise<EventParticipation | undefined>;
+  getEventParticipationsByUser(userId: number): Promise<EventParticipation[]>;
+  getEventParticipationsByEvent(eventId: number): Promise<EventParticipation[]>;
+  createEventParticipation(participation: InsertEventParticipation): Promise<EventParticipation>;
+  updateEventParticipation(id: number, participation: Partial<InsertEventParticipation>): Promise<EventParticipation>;
+  deleteEventParticipation(id: number): Promise<void>;
   
   // Post operations
   getPost(id: number): Promise<Post | undefined>;
@@ -222,58 +233,112 @@ export class DatabaseStorage implements IStorage {
     await db.delete(children).where(eq(children.id, id));
   }
 
-  async getChildWithSchedules(id: number): Promise<ChildWithSchedules | undefined> {
+  async getChildWithEventParticipations(id: number): Promise<ChildWithEventParticipations | undefined> {
     const child = await db.query.children.findFirst({
       where: eq(children.id, id),
       with: {
-        schedules: true,
+        eventParticipations: true,
       },
     });
     return child;
   }
 
-  async getSchedule(id: number): Promise<Schedule | undefined> {
-    const [schedule] = await db.select().from(schedules).where(eq(schedules.id, id));
-    return schedule || undefined;
+  // Event operations
+  async getEvent(id: number): Promise<Event | undefined> {
+    const [event] = await db.select().from(events).where(eq(events.id, id));
+    return event || undefined;
   }
 
-  async getSchedulesByChild(childId: number): Promise<Schedule[]> {
-    return await db.select().from(schedules).where(eq(schedules.childId, childId));
-  }
-
-  async getSchedulesByParent(parentId: number): Promise<ScheduleWithChild[]> {
-    const childrenOfParent = await db.select({ id: children.id }).from(children).where(eq(children.parentId, parentId));
-    const childIds = childrenOfParent.map(child => child.id);
-    
-    if (childIds.length === 0) {
-      return [];
-    }
-    
-    return await db.query.schedules.findMany({
+  async getEventsByInstitution(institutionId: number): Promise<EventWithParticipations[]> {
+    return await db.query.events.findMany({
+      where: eq(events.institutionId, institutionId),
       with: {
-        child: true,
+        participations: {
+          with: {
+            user: true,
+            child: true,
+          },
+        },
       },
-      where: (schedules, { inArray }) => inArray(schedules.childId, childIds),
     });
   }
 
-  async createSchedule(insertSchedule: InsertSchedule): Promise<Schedule> {
-    const [schedule] = await db.insert(schedules).values(insertSchedule).returning();
-    return schedule;
+  async getEventsWithParticipationsByUser(userId: number): Promise<EventWithParticipations[]> {
+    const userParticipations = await db.select({ eventId: eventParticipations.eventId })
+      .from(eventParticipations)
+      .where(eq(eventParticipations.userId, userId));
+    
+    const eventIds = userParticipations.map(p => p.eventId);
+    
+    if (eventIds.length === 0) {
+      return [];
+    }
+    
+    return await db.query.events.findMany({
+      with: {
+        participations: {
+          with: {
+            user: true,
+            child: true,
+          },
+        },
+        institution: true,
+      },
+      where: (events, { inArray }) => inArray(events.id, eventIds),
+    });
   }
 
-  async updateSchedule(id: number, updateSchedule: Partial<InsertSchedule>): Promise<Schedule> {
-    const [schedule] = await db
-      .update(schedules)
-      .set(updateSchedule)
-      .where(eq(schedules.id, id))
+  async createEvent(insertEvent: InsertEvent): Promise<Event> {
+    const [event] = await db.insert(events).values(insertEvent).returning();
+    return event;
+  }
+
+  async updateEvent(id: number, updateEvent: Partial<InsertEvent>): Promise<Event> {
+    const [event] = await db
+      .update(events)
+      .set(updateEvent)
+      .where(eq(events.id, id))
       .returning();
-    return schedule;
+    return event;
   }
 
-  async deleteSchedule(id: number): Promise<void> {
-    await db.delete(schedules).where(eq(schedules.id, id));
+  async deleteEvent(id: number): Promise<void> {
+    await db.delete(events).where(eq(events.id, id));
   }
+
+  // Event Participation operations
+  async getEventParticipation(id: number): Promise<EventParticipation | undefined> {
+    const [participation] = await db.select().from(eventParticipations).where(eq(eventParticipations.id, id));
+    return participation || undefined;
+  }
+
+  async getEventParticipationsByUser(userId: number): Promise<EventParticipation[]> {
+    return await db.select().from(eventParticipations).where(eq(eventParticipations.userId, userId));
+  }
+
+  async getEventParticipationsByEvent(eventId: number): Promise<EventParticipation[]> {
+    return await db.select().from(eventParticipations).where(eq(eventParticipations.eventId, eventId));
+  }
+
+  async createEventParticipation(insertParticipation: InsertEventParticipation): Promise<EventParticipation> {
+    const [participation] = await db.insert(eventParticipations).values(insertParticipation).returning();
+    return participation;
+  }
+
+  async updateEventParticipation(id: number, updateParticipation: Partial<InsertEventParticipation>): Promise<EventParticipation> {
+    const [participation] = await db
+      .update(eventParticipations)
+      .set(updateParticipation)
+      .where(eq(eventParticipations.id, id))
+      .returning();
+    return participation;
+  }
+
+  async deleteEventParticipation(id: number): Promise<void> {
+    await db.delete(eventParticipations).where(eq(eventParticipations.id, id));
+  }
+
+
 
   async getPost(id: number): Promise<Post | undefined> {
     const [post] = await db.select().from(posts).where(eq(posts.id, id));

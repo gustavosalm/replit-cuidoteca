@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { insertUserSchema, insertParentSchema, insertInstitutionSchema, insertCuidadorSchema, insertChildSchema, insertScheduleSchema, insertPostSchema, insertNotificationSchema } from "@shared/schema";
+import { insertUserSchema, insertParentSchema, insertInstitutionSchema, insertCuidadorSchema, insertChildSchema, insertEventSchema, insertEventParticipationSchema, insertPostSchema, insertNotificationSchema } from "@shared/schema";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
@@ -317,79 +317,156 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Schedule routes
-  app.get('/api/schedules', authenticateToken, async (req, res) => {
+  // Event routes
+  app.get('/api/events', authenticateToken, async (req, res) => {
     try {
-      const schedules = await storage.getSchedulesByParent(req.user.id);
-      res.json(schedules);
-    } catch (error) {
-      console.error('Get schedules error:', error);
-      res.status(500).json({ message: 'Failed to get schedules' });
-    }
-  });
-
-  app.post('/api/schedules', authenticateToken, async (req, res) => {
-    try {
-      const scheduleData = insertScheduleSchema.parse(req.body);
-      
-      // Verify child belongs to user
-      const child = await storage.getChild(scheduleData.childId);
-      if (!child || child.parentId !== req.user.id) {
-        return res.status(404).json({ message: 'Child not found' });
+      if (req.user.role === 'institution') {
+        // Institutions get their own events
+        const events = await storage.getEventsByInstitution(req.user.id);
+        res.json(events);
+      } else {
+        // Parents and cuidadores get events they can participate in
+        const events = await storage.getEventsWithParticipationsByUser(req.user.id);
+        res.json(events);
       }
-      
-      const schedule = await storage.createSchedule(scheduleData);
-      res.status(201).json(schedule);
     } catch (error) {
-      console.error('Create schedule error:', error);
-      res.status(400).json({ message: 'Failed to create schedule' });
+      console.error('Get events error:', error);
+      res.status(500).json({ message: 'Failed to get events' });
     }
   });
 
-  app.put('/api/schedules/:id', authenticateToken, async (req, res) => {
+  // Create event (only institutions)
+  app.post('/api/events', authenticateToken, async (req, res) => {
     try {
-      const scheduleId = parseInt(req.params.id);
+      if (req.user.role !== 'institution') {
+        return res.status(403).json({ message: 'Only institutions can create events' });
+      }
+
+      const eventData = insertEventSchema.parse({
+        ...req.body,
+        institutionId: req.user.id
+      });
+      
+      const event = await storage.createEvent(eventData);
+      
+      // Send invitations to all connected users
+      const connectedUsers = await storage.getInstitutionConnectedUsers(req.user.id);
+      const parentAndCuidadorUsers = connectedUsers.filter(user => 
+        user.role === 'parent' || user.role === 'cuidador'
+      );
+      
+      // Create notifications for all connected users
+      const notificationPromises = parentAndCuidadorUsers.map(user =>
+        storage.createNotification({
+          userId: user.id,
+          message: `Novo evento "${event.title}" criado por ${req.user.institutionName || req.user.name}. Faça check-in para participar!`
+        })
+      );
+      
+      await Promise.all(notificationPromises);
+      
+      res.status(201).json(event);
+    } catch (error) {
+      console.error('Create event error:', error);
+      res.status(400).json({ message: 'Failed to create event' });
+    }
+  });
+
+  // Update event (only institutions)
+  app.put('/api/events/:id', authenticateToken, async (req, res) => {
+    try {
+      const eventId = parseInt(req.params.id);
       const updates = req.body;
       
-      const schedule = await storage.getSchedule(scheduleId);
-      if (!schedule) {
-        return res.status(404).json({ message: 'Schedule not found' });
+      const event = await storage.getEvent(eventId);
+      if (!event) {
+        return res.status(404).json({ message: 'Event not found' });
       }
       
-      // Verify child belongs to user
-      const child = await storage.getChild(schedule.childId);
-      if (!child || child.parentId !== req.user.id) {
-        return res.status(404).json({ message: 'Schedule not found' });
+      // Only institution that created the event can update it
+      if (req.user.role !== 'institution' || event.institutionId !== req.user.id) {
+        return res.status(403).json({ message: 'Not authorized to update this event' });
       }
       
-      const updatedSchedule = await storage.updateSchedule(scheduleId, updates);
-      res.json(updatedSchedule);
+      const updatedEvent = await storage.updateEvent(eventId, updates);
+      res.json(updatedEvent);
     } catch (error) {
-      console.error('Update schedule error:', error);
-      res.status(500).json({ message: 'Failed to update schedule' });
+      console.error('Update event error:', error);
+      res.status(500).json({ message: 'Failed to update event' });
     }
   });
 
-  app.delete('/api/schedules/:id', authenticateToken, async (req, res) => {
+  // Delete event (only institutions)
+  app.delete('/api/events/:id', authenticateToken, async (req, res) => {
     try {
-      const scheduleId = parseInt(req.params.id);
+      const eventId = parseInt(req.params.id);
       
-      const schedule = await storage.getSchedule(scheduleId);
-      if (!schedule) {
-        return res.status(404).json({ message: 'Schedule not found' });
+      const event = await storage.getEvent(eventId);
+      if (!event) {
+        return res.status(404).json({ message: 'Event not found' });
       }
       
-      // Verify child belongs to user
-      const child = await storage.getChild(schedule.childId);
-      if (!child || child.parentId !== req.user.id) {
-        return res.status(404).json({ message: 'Schedule not found' });
+      // Only institution that created the event can delete it
+      if (req.user.role !== 'institution' || event.institutionId !== req.user.id) {
+        return res.status(403).json({ message: 'Not authorized to delete this event' });
       }
       
-      await storage.deleteSchedule(scheduleId);
+      await storage.deleteEvent(eventId);
       res.status(204).send();
     } catch (error) {
-      console.error('Delete schedule error:', error);
-      res.status(500).json({ message: 'Failed to delete schedule' });
+      console.error('Delete event error:', error);
+      res.status(500).json({ message: 'Failed to delete event' });
+    }
+  });
+
+  // Check-in to event (parents and cuidadores)
+  app.post('/api/events/:id/checkin', authenticateToken, async (req, res) => {
+    try {
+      const eventId = parseInt(req.params.id);
+      const { status, childId } = req.body; // status: 'confirmed' or 'cancelled'
+      
+      if (req.user.role === 'institution') {
+        return res.status(403).json({ message: 'Institutions cannot check-in to events' });
+      }
+      
+      const event = await storage.getEvent(eventId);
+      if (!event) {
+        return res.status(404).json({ message: 'Event not found' });
+      }
+      
+      // Verify child belongs to user (if provided)
+      if (childId && req.user.role === 'parent') {
+        const child = await storage.getChild(childId);
+        if (!child || child.parentId !== req.user.id) {
+          return res.status(404).json({ message: 'Child not found' });
+        }
+      }
+      
+      // Check if participation already exists
+      const existingParticipations = await storage.getEventParticipationsByEvent(eventId);
+      const userParticipation = existingParticipations.find(p => 
+        p.userId === req.user.id && (!childId || p.childId === childId)
+      );
+      
+      if (userParticipation) {
+        // Update existing participation
+        const updatedParticipation = await storage.updateEventParticipation(userParticipation.id, { status });
+        res.json(updatedParticipation);
+      } else {
+        // Create new participation
+        const participationData = insertEventParticipationSchema.parse({
+          eventId,
+          userId: req.user.id,
+          childId: req.user.role === 'parent' ? childId : null,
+          status
+        });
+        
+        const participation = await storage.createEventParticipation(participationData);
+        res.status(201).json(participation);
+      }
+    } catch (error) {
+      console.error('Event check-in error:', error);
+      res.status(500).json({ message: 'Failed to check-in to event' });
     }
   });
 

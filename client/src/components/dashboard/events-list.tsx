@@ -5,11 +5,11 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, Edit } from "lucide-react";
 import { useLocation } from "wouter";
 
-export default function SchedulesList() {
+export default function EventsList() {
   const [, setLocation] = useLocation();
   
-  const { data: schedules, isLoading } = useQuery({
-    queryKey: ["/api/schedules"],
+  const { data: events = [], isLoading } = useQuery({
+    queryKey: ["/api/events"],
   });
 
   const dayTranslations: { [key: string]: string } = {
@@ -74,27 +74,27 @@ export default function SchedulesList() {
     <section className="mb-8">
       <Card>
         <CardHeader>
-          <CardTitle>Próximos Agendamentos</CardTitle>
+          <CardTitle>Próximos Eventos</CardTitle>
         </CardHeader>
         <CardContent>
-          {!schedules?.length ? (
+          {!events.length ? (
             <div className="text-center py-8">
               <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <p className="text-muted-foreground">
-                Nenhum agendamento encontrado
+                Nenhum evento encontrado
               </p>
               <Button
-                onClick={() => setLocation("/scheduling")}
+                onClick={() => setLocation("/events")}
                 className="mt-4"
               >
-                Fazer primeiro agendamento
+                Ver Eventos Disponíveis
               </Button>
             </div>
           ) : (
             <div className="space-y-4">
-              {schedules.map((schedule: any) => (
+              {events.map((event: any) => (
                 <div
-                  key={schedule.id}
+                  key={event.id}
                   className="flex items-center p-4 border border-border rounded-lg"
                 >
                   <div className="flex-shrink-0 w-12 h-12 bg-primary rounded-full flex items-center justify-center">
@@ -102,22 +102,16 @@ export default function SchedulesList() {
                   </div>
                   <div className="ml-4 flex-1">
                     <h4 className="font-medium text-foreground">
-                      {dayTranslations[schedule.dayOfWeek]}
+                      {event.title}
                     </h4>
                     <p className="text-sm text-muted-foreground">
-                      {periodTranslations[schedule.period]}
+                      {dayTranslations[event.dayOfWeek]} - {periodTranslations[event.period]}
                     </p>
-                    <p className="text-sm text-muted-foreground">
-                      {schedule.child?.name}
-                    </p>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Badge className={getStatusColor(schedule.status)}>
-                      {getStatusText(schedule.status)}
-                    </Badge>
-                    <Button variant="ghost" size="sm">
-                      <Edit className="h-4 w-4" />
-                    </Button>
+                    {event.description && (
+                      <p className="text-sm text-muted-foreground">
+                        {event.description}
+                      </p>
+                    )}
                   </div>
                 </div>
               ))}
@@ -125,8 +119,8 @@ export default function SchedulesList() {
           )}
           
           <div className="mt-6 text-center">
-            <Button onClick={() => setLocation("/scheduling")}>
-              Ver Todos os Agendamentos
+            <Button onClick={() => setLocation("/events")}>
+              Ver Todos os Eventos
             </Button>
           </div>
         </CardContent>
