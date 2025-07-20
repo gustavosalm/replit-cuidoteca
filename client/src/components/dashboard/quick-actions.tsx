@@ -2,15 +2,17 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Baby, MessageCircle, UserCog, School } from "lucide-react";
+import { Plus, Baby, MessageCircle, UserCog, School, Calendar } from "lucide-react";
 import ChildModal from "@/components/modals/child-modal";
 import CuidotecaModal from "@/components/modals/cuidoteca-modal";
+import EventModal from "@/components/modals/event-modal";
 import { useAuth } from "@/hooks/use-auth";
 
 export default function QuickActions() {
   const [, setLocation] = useLocation();
   const [isChildModalOpen, setIsChildModalOpen] = useState(false);
   const [isCuidotecaModalOpen, setIsCuidotecaModalOpen] = useState(false);
+  const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const { user } = useAuth();
 
   return (
@@ -45,14 +47,25 @@ export default function QuickActions() {
               )}
               
               {user?.role === 'institution' && (
-                <Button
-                  variant="outline"
-                  className="flex items-center p-4 h-auto"
-                  onClick={() => setIsCuidotecaModalOpen(true)}
-                >
-                  <School className="h-5 w-5 text-primary mr-3" />
-                  <span>Nova Cuidoteca</span>
-                </Button>
+                <>
+                  <Button
+                    variant="outline"
+                    className="flex items-center p-4 h-auto"
+                    onClick={() => setIsCuidotecaModalOpen(true)}
+                  >
+                    <School className="h-5 w-5 text-primary mr-3" />
+                    <span>Nova Cuidoteca</span>
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    className="flex items-center p-4 h-auto"
+                    onClick={() => setIsEventModalOpen(true)}
+                  >
+                    <Calendar className="h-5 w-5 text-blue-600 mr-3" />
+                    <span>Novo Event</span>
+                  </Button>
+                </>
               )}
               
               <Button
@@ -85,6 +98,11 @@ export default function QuickActions() {
       <CuidotecaModal
         isOpen={isCuidotecaModalOpen}
         onClose={() => setIsCuidotecaModalOpen(false)}
+      />
+      
+      <EventModal
+        isOpen={isEventModalOpen}
+        onClose={() => setIsEventModalOpen(false)}
       />
     </>
   );

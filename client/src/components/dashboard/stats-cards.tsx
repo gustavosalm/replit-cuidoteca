@@ -26,7 +26,7 @@ export default function StatsCards() {
           <div className="flex items-center">
             <CalendarCheck className="h-8 w-8 mr-3" />
             <div>
-              <p className="text-sm opacity-80">Próximo Agendamento</p>
+              <p className="text-sm opacity-80">Próximo Event</p>
               <p className="text-lg font-semibold">
                 {nextAppointment ? `${nextAppointment.dayOfWeek}, ${nextAppointment.period}` : "Nenhum"}
               </p>

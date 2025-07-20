@@ -96,7 +96,7 @@ export default function Admin() {
                     <div className="flex items-center">
                       <Calendar className="h-8 w-8 text-red-600 mr-3" />
                       <div>
-                        <p className="text-sm text-muted-foreground">Agendamentos Hoje</p>
+                        <p className="text-sm text-muted-foreground">Events Hoje</p>
                         <p className="text-2xl font-bold text-foreground">
                           {stats?.todaySchedules || 0}
                         </p>
