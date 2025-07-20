@@ -22,6 +22,7 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
   const [formData, setFormData] = useState({
     title: "",
     description: "",
+    location: "",
     dayOfWeek: "",
     period: "",
     startTime: "",
@@ -34,6 +35,7 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
       setFormData({
         title: event.title || "",
         description: event.description || "",
+        location: event.location || "",
         dayOfWeek: event.dayOfWeek || "",
         period: event.period || "",
         startTime: event.startTime || "",
@@ -44,6 +46,7 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
       setFormData({
         title: "",
         description: "",
+        location: "",
         dayOfWeek: "",
         period: "",
         startTime: "",
@@ -210,6 +213,17 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               placeholder="Descreva o evento..."
               rows={3}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="location">Local</Label>
+            <Input
+              id="location"
+              type="text"
+              value={formData.location}
+              onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+              placeholder="Ex: Sala 201, Auditório Principal, Pátio"
             />
           </div>
 

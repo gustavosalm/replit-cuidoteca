@@ -116,7 +116,12 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### July 20, 2025 - Session Management Fix & Authentication Issue Resolution
+### July 20, 2025 - Event Location Feature & Session Management Fix
+- **Event Location Feature**: Added location field to event creation and display system
+  - Updated database schema to include location column in events table
+  - Enhanced event creation modal with location input field
+  - Added location display in events list with map pin icon
+  - Location shows in both main events page and dashboard events preview
 - **Session Management Issue**: Fixed authentication contamination when switching between user accounts
 - **Logout Improvement**: Enhanced logout function to clear localStorage and reload page, preventing cached user sessions
 - **User Indicator**: Added current user display in header showing name and role for better session visibility

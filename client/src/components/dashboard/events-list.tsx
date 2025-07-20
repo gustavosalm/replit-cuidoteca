@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, Edit } from "lucide-react";
+import { Calendar, Clock, Edit, MapPin } from "lucide-react";
 import { useLocation } from "wouter";
 
 export default function EventsList() {
@@ -107,6 +107,12 @@ export default function EventsList() {
                     <p className="text-sm text-muted-foreground">
                       {dayTranslations[event.dayOfWeek]} - {periodTranslations[event.period]}
                     </p>
+                    {event.location && (
+                      <div className="flex items-center text-sm text-muted-foreground">
+                        <MapPin className="h-4 w-4 mr-1" />
+                        <span>{event.location}</span>
+                      </div>
+                    )}
                     {event.description && (
                       <p className="text-sm text-muted-foreground">
                         {event.description}

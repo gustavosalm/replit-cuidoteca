@@ -5,7 +5,7 @@ import MobileNav from "@/components/layout/mobile-nav";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Plus, Edit, Trash2, CheckCircle, XCircle } from "lucide-react";
+import { Calendar, Plus, Edit, Trash2, CheckCircle, XCircle, MapPin } from "lucide-react";
 import EventModal from "@/components/modals/event-modal";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -139,6 +139,12 @@ export default function Events() {
                           <p className="text-sm text-muted-foreground mb-1">
                             {dayTranslations[event.dayOfWeek]} - {periodTranslations[event.period]}
                           </p>
+                          {event.location && (
+                            <div className="flex items-center text-sm text-muted-foreground mb-1">
+                              <MapPin className="h-4 w-4 mr-1" />
+                              <span>{event.location}</span>
+                            </div>
+                          )}
                           {event.description && (
                             <p className="text-sm text-muted-foreground mb-1">
                               {event.description}
