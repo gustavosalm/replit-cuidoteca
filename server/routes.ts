@@ -282,6 +282,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update connection status
       await storage.updateUserConnectionStatus(connectionId, 'accepted', new Date());
       
+      // Remove the original connection request notification
+      await storage.removeNotificationByConnectionRequestId(connectionId);
+      
       // Get requester info
       const requester = await storage.getUser(connection.requesterId);
       if (requester) {
@@ -318,6 +321,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Update connection status
       await storage.updateUserConnectionStatus(connectionId, 'declined');
+      
+      // Remove the original connection request notification
+      await storage.removeNotificationByConnectionRequestId(connectionId);
       
       res.json({ message: 'Connection declined successfully' });
     } catch (error) {
