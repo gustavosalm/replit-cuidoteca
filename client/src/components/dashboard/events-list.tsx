@@ -10,7 +10,12 @@ export default function EventsList() {
   
   const { data: events = [], isLoading } = useQuery({
     queryKey: ["/api/events"],
+    staleTime: 0, // Always fetch fresh data for debugging
+    cacheTime: 0, // Don't cache the response
   });
+
+  // Debug logging
+  console.log('Dashboard Events Debug:', { events, isLoading, eventsLength: Array.isArray(events) ? events.length : 'not array' });
 
 
 
