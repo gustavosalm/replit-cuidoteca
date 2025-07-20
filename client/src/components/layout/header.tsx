@@ -103,8 +103,11 @@ export default function Header() {
                 )}
               </Button>
             </div>
-            <div className="relative">
-              <Button variant="ghost" size="sm" onClick={handleLogout}>
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-muted-foreground hidden sm:block">
+                {user?.name} ({user?.role})
+              </span>
+              <Button variant="ghost" size="sm" onClick={handleLogout} title="Logout">
                 <User className="h-4 w-4" />
               </Button>
             </div>

@@ -73,6 +73,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = () => {
     localStorage.removeItem('token');
     setUser(null);
+    // Clear all query cache to prevent state leakage between users
+    if (typeof window !== 'undefined') {
+      window.location.reload();
+    }
   };
 
   return (
