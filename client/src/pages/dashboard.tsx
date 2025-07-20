@@ -81,6 +81,7 @@ export default function Dashboard() {
         )}
         {user.role === 'institution' && (
           <>
+            <EventsList />
             <PendingEnrollments />
             <PendingCuidadorEnrollments />
             <CuidotecasList />
