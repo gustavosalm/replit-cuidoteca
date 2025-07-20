@@ -132,6 +132,48 @@ export default function PublicProfile() {
     },
   });
 
+  const acceptConnectionMutation = useMutation({
+    mutationFn: async (connectionId: number) => {
+      await apiRequest("PUT", `/api/connection-requests/${connectionId}/accept`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Conexão aceita",
+        description: "Vocês agora estão conectados!",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/users", id, "connection-status"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Não foi possível aceitar a conexão.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const declineConnectionMutation = useMutation({
+    mutationFn: async (connectionId: number) => {
+      await apiRequest("PUT", `/api/connection-requests/${connectionId}/decline`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Conexão recusada",
+        description: "A solicitação foi recusada.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/users", id, "connection-status"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Não foi possível recusar a conexão.",
+        variant: "destructive",
+      });
+    },
+  });
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-neutral p-4">
@@ -348,6 +390,25 @@ export default function PublicProfile() {
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
+                ) : connectionStatus?.incoming ? (
+                  <div className="flex gap-2 flex-1">
+                    <Button 
+                      variant="default"
+                      className="flex-1"
+                      onClick={() => acceptConnectionMutation.mutate(connectionStatus.connectionId)}
+                      disabled={acceptConnectionMutation.isPending}
+                    >
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      {acceptConnectionMutation.isPending ? "Aceitando..." : "Aceitar Conexão"}
+                    </Button>
+                    <Button 
+                      variant="outline"
+                      onClick={() => declineConnectionMutation.mutate(connectionStatus.connectionId)}
+                      disabled={declineConnectionMutation.isPending}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
                 ) : connectionStatus?.pending ? (
                   <>
                     <Button 

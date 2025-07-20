@@ -347,10 +347,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Find existing connection between users
       const connection = await storage.getUserConnectionBetweenUsers(currentUserId, targetUserId);
       
+      if (!connection) {
+        return res.json({
+          connected: false,
+          pending: false,
+          incoming: false,
+          connectionId: null
+        });
+      }
+      
+      const isConnected = connection.status === 'accepted';
+      const isPending = connection.status === 'pending';
+      const isSentByCurrentUser = connection.requesterId === currentUserId;
+      const isIncomingRequest = connection.recipientId === currentUserId && isPending;
+      
       res.json({
-        connected: connection && connection.status === 'accepted',
-        pending: connection && connection.status === 'pending',
-        connectionId: connection?.id || null
+        connected: isConnected,
+        pending: isPending && isSentByCurrentUser, // Only show as pending if current user sent it
+        incoming: isIncomingRequest, // Show as incoming if current user is recipient
+        connectionId: connection.id
       });
     } catch (error) {
       console.error('Check connection status error:', error);
