@@ -1179,6 +1179,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async removeUserConnection(connectionId: number): Promise<void> {
+    // First, delete any notifications that reference this connection
+    await db.delete(notifications).where(eq(notifications.connectionRequestId, connectionId));
+    
+    // Then delete the connection itself
     await db.delete(userConnections).where(eq(userConnections.id, connectionId));
   }
 }
