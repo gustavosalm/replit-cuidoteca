@@ -19,6 +19,7 @@ export default function Profile() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [profilePicturePreview, setProfilePicturePreview] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: user?.name || "",
@@ -28,6 +29,11 @@ export default function Profile() {
     course: user?.course || "",
     semester: user?.semester || "",
     address: user?.address || "",
+  });
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
   });
 
   const updateMutation = useMutation({
@@ -67,6 +73,31 @@ export default function Profile() {
       toast({
         title: "Erro ao atualizar",
         description: "Não foi possível atualizar sua foto de perfil",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const changePasswordMutation = useMutation({
+    mutationFn: async (data: { currentPassword: string; newPassword: string }) => {
+      return await apiRequest("PUT", "/api/users/me/password", data);
+    },
+    onSuccess: () => {
+      setIsChangingPassword(false);
+      setPasswordData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+      toast({
+        title: "Senha atualizada",
+        description: "Sua senha foi alterada com sucesso",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro ao alterar senha",
+        description: error.response?.data?.message || "Não foi possível alterar sua senha",
         variant: "destructive",
       });
     },
@@ -157,6 +188,51 @@ export default function Profile() {
       address: user?.address || "",
     });
     setIsEditing(false);
+  };
+
+  const handlePasswordSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
+      toast({
+        title: "Dados incompletos",
+        description: "Todos os campos de senha são obrigatórios",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast({
+        title: "Senhas não coincidem",
+        description: "A nova senha e a confirmação devem ser iguais",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      toast({
+        title: "Senha muito curta",
+        description: "A nova senha deve ter pelo menos 6 caracteres",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    changePasswordMutation.mutate({
+      currentPassword: passwordData.currentPassword,
+      newPassword: passwordData.newPassword,
+    });
+  };
+
+  const handlePasswordCancel = () => {
+    setPasswordData({
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    });
+    setIsChangingPassword(false);
   };
 
   const getRoleDisplay = (role: string) => {
@@ -379,14 +455,90 @@ export default function Profile() {
               
               <Separator />
               
-              <div className="pt-4">
-                <Button variant="outline" className="w-full">
+              <div className="flex items-center justify-between py-2">
+                <div>
+                  <p className="font-medium">Senha</p>
+                  <p className="text-sm text-muted-foreground">
+                    Altere sua senha para manter sua conta segura
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsChangingPassword(true)}
+                  disabled={isChangingPassword}
+                >
                   Alterar Senha
                 </Button>
               </div>
             </div>
           </CardContent>
         </Card>
+
+        {/* Password Change Modal/Section */}
+        {isChangingPassword && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Alterar Senha</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handlePasswordSubmit} className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="currentPassword">Senha Atual</Label>
+                  <Input
+                    id="currentPassword"
+                    type="password"
+                    value={passwordData.currentPassword}
+                    onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                    placeholder="Digite sua senha atual"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="newPassword">Nova Senha</Label>
+                  <Input
+                    id="newPassword"
+                    type="password"
+                    value={passwordData.newPassword}
+                    onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                    placeholder="Digite sua nova senha (min. 6 caracteres)"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirmar Nova Senha</Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    value={passwordData.confirmPassword}
+                    onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                    placeholder="Confirme sua nova senha"
+                    required
+                  />
+                </div>
+
+                <div className="flex space-x-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handlePasswordCancel}
+                    disabled={changePasswordMutation.isPending}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={changePasswordMutation.isPending}
+                  >
+                    {changePasswordMutation.isPending ? "Alterando..." : "Alterar Senha"}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        )}
       </main>
 
       <MobileNav />
