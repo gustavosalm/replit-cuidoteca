@@ -116,11 +116,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### July 20, 2025 - Database Connection Fix
+### July 20, 2025 - Database Connection Fix & System Clarification
 - **Database Issue Resolution**: Fixed DATABASE_URL environment variable error by provisioning PostgreSQL database 
 - **Database Schema Deployment**: Successfully pushed all schema changes to PostgreSQL using Drizzle Kit
 - **Application Recovery**: Application now running successfully on port 5000 without connection errors
 - **Environment Variables**: All required PostgreSQL connection variables (DATABASE_URL, PGHOST, PGUSER, etc.) properly configured
+- **Connection System Clarification**: Confirmed that institution connections and user-to-user connections are separate systems
+  - Each user (parent, cuidador) can connect to institutions independently via `universityConnections` table
+  - Direct user connections use separate `userConnections` table for parent-cuidador relationships
+  - System correctly allows multiple users to connect to the same institution without conflicts
 
 ### July 19, 2025 - Cuidador Role Implementation
 - **Added Third User Role**: Implemented "cuidador" role alongside existing parent and institution roles
