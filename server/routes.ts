@@ -565,7 +565,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const notificationPromises = parentAndCuidadorUsers.map(user =>
         storage.createNotification({
           userId: user.id,
-          message: `Novo evento "${event.title}" criado por ${req.user.institutionName || req.user.name}. Faça check-in para participar!`
+          message: `Novo evento "${event.title}" criado por ${req.user.institutionName || req.user.name}. Faça check-in para participar!`,
+          type: 'event_created',
+          eventId: event.id
         })
       );
       
@@ -925,7 +927,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           storage.createNotification({
             userId: user.id,
             message: `Nova cuidoteca "${cuidoteca.name}" criada por ${req.user.institutionName || req.user.name}`,
-            type: 'cuidoteca_created'
+            type: 'cuidoteca_created',
+            cuidotecaId: cuidoteca.id
           })
         );
         

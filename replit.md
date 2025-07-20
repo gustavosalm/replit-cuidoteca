@@ -116,6 +116,21 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### July 20, 2025 - Enhanced Notification System with Links
+- **Notification Links**: Added clickable links to notifications for better user engagement
+  - Cuidoteca creation notifications now include "Ver cuidotecas →" link to institutions page
+  - Event creation notifications now include "Ver evento →" link to events page
+  - Updated database schema to include cuidotecaId and eventId in notifications table
+  - Added specific icons for different notification types (Users icon for cuidotecas, Calendar icon for events)
+- **Database Schema Enhancement**: Extended notifications table with new fields
+  - Added cuidotecaId field to link notifications to specific cuidotecas
+  - Added eventId field to link notifications to specific events
+  - Updated notification types to include 'cuidoteca_created' and 'event_created'
+- **Backend Updates**: Modified notification creation to include relevant IDs
+  - Cuidoteca creation now stores cuidoteca ID in notification
+  - Event creation now stores event ID in notification
+  - Type-safe notification creation with proper foreign key relationships
+
 ### July 20, 2025 - Event System Modernization & Location Feature
 - **Event Creation Modernization**: Converted from weekday/period selection to specific date and time format
   - Replaced day-of-week selector with date picker for specific event dates

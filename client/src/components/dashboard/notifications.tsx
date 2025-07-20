@@ -1,9 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Bell, Info, CheckCircle, X, UserPlus, UserCheck, UserX } from "lucide-react";
+import { Bell, Info, CheckCircle, X, UserPlus, UserCheck, UserX, Calendar, Users } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { Link } from "wouter";
 
 export default function Notifications() {
   const { toast } = useToast();
@@ -11,7 +12,7 @@ export default function Notifications() {
 
   const { data: notifications, isLoading } = useQuery({
     queryKey: ["/api/notifications"],
-    select: (data) => data.slice(0, 5), // Show only first 5 notifications
+    select: (data: any[]) => data.slice(0, 5), // Show only first 5 notifications
   });
 
   const markAsReadMutation = useMutation({
@@ -123,6 +124,10 @@ export default function Notifications() {
                   <div className="flex-shrink-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center">
                     {notification.type === "connection_request" ? (
                       <UserPlus className="h-4 w-4 text-white" />
+                    ) : notification.type === "cuidoteca_created" ? (
+                      <Users className="h-4 w-4 text-white" />
+                    ) : notification.type === "event_created" ? (
+                      <Calendar className="h-4 w-4 text-white" />
                     ) : notification.message.includes("confirmado") ? (
                       <CheckCircle className="h-4 w-4 text-white" />
                     ) : (
@@ -130,9 +135,23 @@ export default function Notifications() {
                     )}
                   </div>
                   <div className="ml-3 flex-1">
-                    <p className="text-sm font-medium text-foreground">
+                    <div className="text-sm font-medium text-foreground">
                       {notification.message}
-                    </p>
+                      {notification.type === "cuidoteca_created" && notification.cuidotecaId && (
+                        <div className="mt-1">
+                          <Link href="/institutions" className="text-primary hover:underline text-xs">
+                            Ver cuidotecas →
+                          </Link>
+                        </div>
+                      )}
+                      {notification.type === "event_created" && notification.eventId && (
+                        <div className="mt-1">
+                          <Link href="/events" className="text-primary hover:underline text-xs">
+                            Ver evento →
+                          </Link>
+                        </div>
+                      )}
+                    </div>
                     <p className="text-xs text-muted-foreground">
                       {formatTimeAgo(notification.createdAt)}
                     </p>
