@@ -15,7 +15,7 @@ import type { Message } from "@shared/schema";
 export default function Messages() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [messageText, setMessageText] = useState("");
 

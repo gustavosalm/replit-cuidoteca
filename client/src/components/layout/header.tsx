@@ -1,11 +1,20 @@
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Heart, Bell, User } from "lucide-react";
 
 export default function Header() {
   const { user, logout } = useAuth();
   const [location, setLocation] = useLocation();
+  
+  // Get notifications to check for unread ones
+  const { data: notifications = [] } = useQuery<any[]>({
+    queryKey: ["/api/notifications"],
+    enabled: !!user,
+  });
+  
+  const hasUnreadNotifications = notifications.some((notification: any) => !notification.read);
 
   const handleLogout = () => {
     logout();
@@ -89,7 +98,9 @@ export default function Header() {
                 }}
               >
                 <Bell className="h-4 w-4" />
-                <span className="absolute -top-1 -right-1 block h-2 w-2 rounded-full bg-red-500"></span>
+                {hasUnreadNotifications && (
+                  <span className="absolute -top-1 -right-1 block h-2 w-2 rounded-full bg-red-500"></span>
+                )}
               </Button>
             </div>
             <div className="relative">
