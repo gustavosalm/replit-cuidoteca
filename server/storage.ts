@@ -1189,6 +1189,16 @@ export class DatabaseStorage implements IStorage {
   async removeNotificationByConnectionRequestId(connectionRequestId: number): Promise<void> {
     await db.delete(notifications).where(eq(notifications.connectionRequestId, connectionRequestId));
   }
+
+  async getConnectedUsersToInstitution(institutionId: number): Promise<User[]> {
+    const connectedUsers = await db
+      .select()
+      .from(users)
+      .innerJoin(universityConnections, eq(universityConnections.userId, users.id))
+      .where(eq(universityConnections.institutionId, institutionId));
+    
+    return connectedUsers.map(row => row.users);
+  }
 }
 
 export const storage = new DatabaseStorage();

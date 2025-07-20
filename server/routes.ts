@@ -915,6 +915,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const cuidotecaData = { ...req.body, institutionId: req.user.id };
       const cuidoteca = await storage.createCuidoteca(cuidotecaData);
+      
+      // Notify all connected users about the new cuidoteca
+      try {
+        const connectedUsers = await storage.getConnectedUsersToInstitution(req.user.id);
+        
+        // Create notifications for each connected user
+        const notificationPromises = connectedUsers.map(user => 
+          storage.createNotification({
+            userId: user.id,
+            message: `Nova cuidoteca "${cuidoteca.name}" criada por ${req.user.institutionName || req.user.name}`,
+            type: 'cuidoteca_created'
+          })
+        );
+        
+        await Promise.all(notificationPromises);
+      } catch (notificationError) {
+        console.error('Failed to send cuidoteca notifications:', notificationError);
+        // Don't fail the cuidoteca creation if notifications fail
+      }
+      
       res.status(201).json(cuidoteca);
     } catch (error) {
       console.error('Create cuidoteca error:', error);
