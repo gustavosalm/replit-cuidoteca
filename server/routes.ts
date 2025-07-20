@@ -240,16 +240,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Users cannot connect directly' });
       }
       
-      // Create notification for target user
+      // Create user connection request
+      const connection = await storage.createUserConnection({
+        requesterId: currentUser.id,
+        recipientId: targetUserId,
+        status: 'pending'
+      });
+      
+      // Create notification for target user with connection request metadata
       await storage.createNotification({
         userId: targetUserId,
-        message: `${currentUser.name} gostaria de se conectar com você`
+        message: `${currentUser.name} gostaria de se conectar com você`,
+        type: 'connection_request',
+        connectionRequestId: connection.id
       });
       
       res.status(200).json({ message: 'Connection request sent' });
     } catch (error) {
       console.error('Connect users error:', error);
       res.status(500).json({ message: 'Failed to send connection request' });
+    }
+  });
+
+  // Accept connection request
+  app.put('/api/connection-requests/:id/accept', authenticateToken, async (req, res) => {
+    try {
+      const connectionId = parseInt(req.params.id);
+      const currentUser = req.user;
+      
+      // Get connection request
+      const connection = await storage.getUserConnectionById(connectionId);
+      if (!connection) {
+        return res.status(404).json({ message: 'Connection request not found' });
+      }
+      
+      // Verify current user is the recipient
+      if (connection.recipientId !== currentUser.id) {
+        return res.status(403).json({ message: 'Unauthorized to accept this connection' });
+      }
+      
+      // Update connection status
+      await storage.updateUserConnectionStatus(connectionId, 'accepted', new Date());
+      
+      // Get requester info
+      const requester = await storage.getUser(connection.requesterId);
+      if (requester) {
+        // Create notification for requester
+        await storage.createNotification({
+          userId: connection.requesterId,
+          message: `${currentUser.name} aceitou sua solicitação de conexão`
+        });
+      }
+      
+      res.json({ message: 'Connection accepted successfully' });
+    } catch (error) {
+      console.error('Accept connection error:', error);
+      res.status(500).json({ message: 'Failed to accept connection' });
+    }
+  });
+
+  // Decline connection request
+  app.put('/api/connection-requests/:id/decline', authenticateToken, async (req, res) => {
+    try {
+      const connectionId = parseInt(req.params.id);
+      const currentUser = req.user;
+      
+      // Get connection request
+      const connection = await storage.getUserConnectionById(connectionId);
+      if (!connection) {
+        return res.status(404).json({ message: 'Connection request not found' });
+      }
+      
+      // Verify current user is the recipient
+      if (connection.recipientId !== currentUser.id) {
+        return res.status(403).json({ message: 'Unauthorized to decline this connection' });
+      }
+      
+      // Update connection status
+      await storage.updateUserConnectionStatus(connectionId, 'declined');
+      
+      res.json({ message: 'Connection declined successfully' });
+    } catch (error) {
+      console.error('Decline connection error:', error);
+      res.status(500).json({ message: 'Failed to decline connection' });
+    }
+  });
+
+  // Get user's connections (accepted connections)
+  app.get('/api/users/:id/connections', authenticateToken, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const connections = await storage.getAcceptedUserConnections(userId);
+      res.json(connections);
+    } catch (error) {
+      console.error('Get user connections error:', error);
+      res.status(500).json({ message: 'Failed to get user connections' });
     }
   });
 

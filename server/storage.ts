@@ -6,6 +6,7 @@ import {
   posts, 
   notifications,
   universityConnections,
+  userConnections,
   cuidotecas,
   cuidotecaEnrollments,
   cuidadorEnrollments,
@@ -24,6 +25,8 @@ import {
   type InsertNotification,
   type UniversityConnection,
   type InsertUniversityConnection,
+  type UserConnection,
+  type InsertUserConnection,
   type Cuidoteca,
   type InsertCuidoteca,
   type CuidotecaEnrollment,
@@ -135,6 +138,13 @@ export interface IStorage {
   sendMessage(message: InsertMessage): Promise<Message>;
   markMessageAsRead(messageId: number): Promise<void>;
   getUserConversations(userId: number): Promise<any[]>;
+
+  // User connection operations
+  createUserConnection(connection: InsertUserConnection): Promise<UserConnection>;
+  getUserConnectionById(id: number): Promise<UserConnection | undefined>;
+  updateUserConnectionStatus(id: number, status: string, acceptedAt?: Date): Promise<UserConnection>;
+  getUserConnectionsByUser(userId: number): Promise<UserConnection[]>;
+  getAcceptedUserConnections(userId: number): Promise<User[]>;
 
   // Admin operations
   getAdminStats(): Promise<{
@@ -1052,6 +1062,93 @@ export class DatabaseStorage implements IStorage {
     });
     
     return Array.from(conversationsMap.values());
+  }
+
+  // User connection operations
+  async createUserConnection(connection: InsertUserConnection): Promise<UserConnection> {
+    const [newConnection] = await db
+      .insert(userConnections)
+      .values(connection)
+      .returning();
+    
+    return newConnection;
+  }
+
+  async getUserConnectionById(id: number): Promise<UserConnection | undefined> {
+    const [connection] = await db
+      .select()
+      .from(userConnections)
+      .where(eq(userConnections.id, id));
+    
+    return connection || undefined;
+  }
+
+  async updateUserConnectionStatus(id: number, status: string, acceptedAt?: Date): Promise<UserConnection> {
+    const updateData: any = { status };
+    if (acceptedAt) {
+      updateData.acceptedAt = acceptedAt;
+    }
+
+    const [updatedConnection] = await db
+      .update(userConnections)
+      .set(updateData)
+      .where(eq(userConnections.id, id))
+      .returning();
+    
+    return updatedConnection;
+  }
+
+  async getUserConnectionsByUser(userId: number): Promise<UserConnection[]> {
+    const connections = await db
+      .select()
+      .from(userConnections)
+      .where(
+        and(
+          eq(userConnections.recipientId, userId),
+          eq(userConnections.status, "pending")
+        )
+      );
+    
+    return connections;
+  }
+
+  async getAcceptedUserConnections(userId: number): Promise<User[]> {
+    // Get connections where user is requester and status is accepted
+    const requesterConnections = await db
+      .select()
+      .from(users)
+      .innerJoin(userConnections, eq(userConnections.recipientId, users.id))
+      .where(
+        and(
+          eq(userConnections.requesterId, userId),
+          eq(userConnections.status, "accepted")
+        )
+      );
+
+    // Get connections where user is recipient and status is accepted
+    const recipientConnections = await db
+      .select()
+      .from(users)
+      .innerJoin(userConnections, eq(userConnections.requesterId, users.id))
+      .where(
+        and(
+          eq(userConnections.recipientId, userId),
+          eq(userConnections.status, "accepted")
+        )
+      );
+
+    // Combine and return unique users
+    const allConnectedUsers = [
+      ...requesterConnections.map(c => c.users),
+      ...recipientConnections.map(c => c.users)
+    ];
+
+    // Remove duplicates based on user ID
+    const uniqueUsers = allConnectedUsers.filter((user, index, self) => 
+      self.findIndex(u => u.id === user.id) === index
+    );
+
+    return uniqueUsers;
   }
 }
 

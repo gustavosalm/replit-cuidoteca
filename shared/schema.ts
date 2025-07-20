@@ -7,6 +7,7 @@ export const userRoleEnum = pgEnum("user_role", ["parent", "coordinator", "careg
 export const scheduleStatusEnum = pgEnum("schedule_status", ["pending", "confirmed", "cancelled"]);
 export const dayOfWeekEnum = pgEnum("day_of_week", ["monday", "tuesday", "wednesday", "thursday", "friday"]);
 export const periodEnum = pgEnum("period", ["morning", "afternoon", "full_day"]);
+export const connectionStatusEnum = pgEnum("connection_status", ["pending", "accepted", "declined"]);
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -70,6 +71,8 @@ export const notifications = pgTable("notifications", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
   message: text("message").notNull(),
+  type: text("type").default("general").notNull(), // general, connection_request
+  connectionRequestId: integer("connection_request_id").references(() => userConnections.id),
   read: boolean("read").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -121,16 +124,31 @@ export const messages = pgTable("messages", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const userConnections = pgTable("user_connections", {
+  id: serial("id").primaryKey(),
+  requesterId: integer("requester_id").references(() => users.id).notNull(),
+  recipientId: integer("recipient_id").references(() => users.id).notNull(),
+  status: connectionStatusEnum("status").notNull().default("pending"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  acceptedAt: timestamp("accepted_at"),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   children: many(children),
   posts: many(posts),
   notifications: many(notifications),
-  userConnections: many(universityConnections, {
+  universityConnections: many(universityConnections, {
     relationName: "userConnections",
   }),
   institutionConnections: many(universityConnections, {
     relationName: "institutionConnections",
+  }),
+  sentConnections: many(userConnections, {
+    relationName: "sentConnections",
+  }),
+  receivedConnections: many(userConnections, {
+    relationName: "receivedConnections",
   }),
   cuidotecas: many(cuidotecas),
   events: many(events),
@@ -181,6 +199,23 @@ export const notificationsRelations = relations(notifications, ({ one }) => ({
   user: one(users, {
     fields: [notifications.userId],
     references: [users.id],
+  }),
+  connectionRequest: one(userConnections, {
+    fields: [notifications.connectionRequestId],
+    references: [userConnections.id],
+  }),
+}));
+
+export const userConnectionsRelations = relations(userConnections, ({ one }) => ({
+  requester: one(users, {
+    fields: [userConnections.requesterId],
+    references: [users.id],
+    relationName: "sentConnections",
+  }),
+  recipient: one(users, {
+    fields: [userConnections.recipientId],
+    references: [users.id],
+    relationName: "receivedConnections",
   }),
 }));
 
@@ -307,6 +342,12 @@ export const insertCuidadorEnrollmentSchema = createInsertSchema(cuidadorEnrollm
   enrollmentDate: true,
 });
 
+export const insertUserConnectionSchema = createInsertSchema(userConnections).omit({
+  id: true,
+  createdAt: true,
+  acceptedAt: true,
+});
+
 export const insertMessageSchema = createInsertSchema(messages).omit({
   id: true,
   read: true,
@@ -337,6 +378,8 @@ export type CuidotecaEnrollment = typeof cuidotecaEnrollments.$inferSelect;
 export type InsertCuidotecaEnrollment = z.infer<typeof insertCuidotecaEnrollmentSchema>;
 export type CuidadorEnrollment = typeof cuidadorEnrollments.$inferSelect;
 export type InsertCuidadorEnrollment = z.infer<typeof insertCuidadorEnrollmentSchema>;
+export type UserConnection = typeof userConnections.$inferSelect;
+export type InsertUserConnection = z.infer<typeof insertUserConnectionSchema>;
 export type Message = typeof messages.$inferSelect;
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
 

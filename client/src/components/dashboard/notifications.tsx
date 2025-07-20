@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Bell, Info, CheckCircle, X } from "lucide-react";
+import { Bell, Info, CheckCircle, X, UserPlus, UserCheck, UserX } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -20,6 +20,46 @@ export default function Notifications() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
+    },
+  });
+
+  const acceptConnectionMutation = useMutation({
+    mutationFn: async (connectionRequestId: number) => {
+      await apiRequest("PUT", `/api/connection-requests/${connectionRequestId}/accept`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Conexão aceita!",
+        description: "Vocês agora estão conectados.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Não foi possível aceitar a conexão.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const declineConnectionMutation = useMutation({
+    mutationFn: async (connectionRequestId: number) => {
+      await apiRequest("PUT", `/api/connection-requests/${connectionRequestId}/decline`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Conexão recusada",
+        description: "A solicitação de conexão foi recusada.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Não foi possível recusar a conexão.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -81,7 +121,9 @@ export default function Notifications() {
                   }`}
                 >
                   <div className="flex-shrink-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                    {notification.message.includes("confirmado") ? (
+                    {notification.type === "connection_request" ? (
+                      <UserPlus className="h-4 w-4 text-white" />
+                    ) : notification.message.includes("confirmado") ? (
                       <CheckCircle className="h-4 w-4 text-white" />
                     ) : (
                       <Info className="h-4 w-4 text-white" />
@@ -95,16 +137,40 @@ export default function Notifications() {
                       {formatTimeAgo(notification.createdAt)}
                     </p>
                   </div>
-                  {!notification.read && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDismiss(notification.id)}
-                      disabled={markAsReadMutation.isPending}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  )}
+                  <div className="flex items-center space-x-2">
+                    {notification.type === "connection_request" && notification.connectionRequestId && !notification.read && (
+                      <>
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => acceptConnectionMutation.mutate(notification.connectionRequestId)}
+                          disabled={acceptConnectionMutation.isPending || declineConnectionMutation.isPending}
+                        >
+                          <UserCheck className="h-4 w-4 mr-1" />
+                          Aceitar
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => declineConnectionMutation.mutate(notification.connectionRequestId)}
+                          disabled={acceptConnectionMutation.isPending || declineConnectionMutation.isPending}
+                        >
+                          <UserX className="h-4 w-4 mr-1" />
+                          Recusar
+                        </Button>
+                      </>
+                    )}
+                    {!notification.read && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDismiss(notification.id)}
+                        disabled={markAsReadMutation.isPending}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

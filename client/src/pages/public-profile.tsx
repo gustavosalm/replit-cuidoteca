@@ -3,8 +3,8 @@ import { useParams, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { ArrowLeft, Mail, Phone, MapPin, GraduationCap, User, Building, MessageCircle, UserPlus } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ArrowLeft, Mail, Phone, MapPin, GraduationCap, User, Building, MessageCircle, UserPlus, Users } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -20,6 +20,18 @@ interface PublicUser {
   address?: string;
   role: string;
   institutionName?: string;
+  profilePicture?: string;
+}
+
+interface ConnectedUser {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+  profilePicture?: string;
+  course?: string;
+  semester?: string;
+  universityId?: string;
 }
 
 export default function PublicProfile() {
@@ -31,6 +43,11 @@ export default function PublicProfile() {
 
   const { data: user, isLoading } = useQuery({
     queryKey: ["/api/users/public", id],
+    enabled: !!id,
+  });
+
+  const { data: userConnections = [], isLoading: loadingConnections } = useQuery({
+    queryKey: ["/api/users", id, "connections"],
     enabled: !!id,
   });
 
@@ -131,6 +148,12 @@ export default function PublicProfile() {
           <CardHeader>
             <div className="flex items-center space-x-4">
               <Avatar className="h-16 w-16">
+                {user.profilePicture && (
+                  <AvatarImage 
+                    src={user.profilePicture} 
+                    alt={user.name}
+                  />
+                )}
                 <AvatarFallback className="text-lg">
                   {user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
                 </AvatarFallback>
@@ -244,6 +267,107 @@ export default function PublicProfile() {
                   <UserPlus className="h-4 w-4 mr-2" />
                   Conectar
                 </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* User Connections */}
+        {userConnections.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Users className="h-5 w-5 mr-2" />
+                Conexões ({userConnections.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Students (Parents) */}
+                {userConnections.filter((conn: ConnectedUser) => conn.role === 'parent').length > 0 && (
+                  <div>
+                    <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-3">
+                      Estudantes ({userConnections.filter((conn: ConnectedUser) => conn.role === 'parent').length})
+                    </h3>
+                    <div className="space-y-3">
+                      {userConnections
+                        .filter((conn: ConnectedUser) => conn.role === 'parent')
+                        .map((connectedUser: ConnectedUser) => (
+                          <div
+                            key={connectedUser.id}
+                            className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-muted cursor-pointer"
+                            onClick={() => setLocation(`/profile/${connectedUser.id}`)}
+                          >
+                            <Avatar>
+                              {connectedUser.profilePicture && (
+                                <AvatarImage 
+                                  src={connectedUser.profilePicture} 
+                                  alt={connectedUser.name}
+                                />
+                              )}
+                              <AvatarFallback>
+                                {connectedUser.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-medium truncate">{connectedUser.name}</h4>
+                              <div className="text-sm text-muted-foreground">
+                                {connectedUser.course && (
+                                  <p className="truncate">{connectedUser.course}</p>
+                                )}
+                                {connectedUser.semester && (
+                                  <p>{connectedUser.semester}º semestre</p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Cuidadores */}
+                {userConnections.filter((conn: ConnectedUser) => conn.role === 'cuidador').length > 0 && (
+                  <div>
+                    <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-3">
+                      Cuidadores ({userConnections.filter((conn: ConnectedUser) => conn.role === 'cuidador').length})
+                    </h3>
+                    <div className="space-y-3">
+                      {userConnections
+                        .filter((conn: ConnectedUser) => conn.role === 'cuidador')
+                        .map((connectedUser: ConnectedUser) => (
+                          <div
+                            key={connectedUser.id}
+                            className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-muted cursor-pointer"
+                            onClick={() => setLocation(`/profile/${connectedUser.id}`)}
+                          >
+                            <Avatar>
+                              {connectedUser.profilePicture && (
+                                <AvatarImage 
+                                  src={connectedUser.profilePicture} 
+                                  alt={connectedUser.name}
+                                />
+                              )}
+                              <AvatarFallback>
+                                {connectedUser.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-medium truncate">{connectedUser.name}</h4>
+                              <div className="text-sm text-muted-foreground">
+                                {connectedUser.course && (
+                                  <p className="truncate">{connectedUser.course}</p>
+                                )}
+                                {connectedUser.semester && (
+                                  <p>{connectedUser.semester}º semestre</p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
