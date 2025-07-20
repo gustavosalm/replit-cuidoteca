@@ -95,6 +95,12 @@ export interface IStorage {
   removeVoteFromPost(postId: number, userId: number): Promise<void>;
   updatePostVoteCounts(postId: number): Promise<void>;
   
+  // Event RSVP methods
+  rsvpToEvent(rsvp: InsertEventRsvp): Promise<EventRsvp>;
+  getUserRsvpForEvent(eventId: number, userId: number): Promise<EventRsvp | null>;
+  getEventRsvps(eventId: number): Promise<Array<EventRsvp & { user: User }>>;
+  getEventRsvpCount(eventId: number): Promise<{ going: number; notGoing: number }>;
+  
   // Notification operations
   getNotification(id: number): Promise<Notification | undefined>;
   getNotificationsByUser(userId: number): Promise<Notification[]>;
@@ -475,6 +481,65 @@ export class DatabaseStorage implements IStorage {
         downvotes: downvoteCount.length,
       })
       .where(eq(posts.id, postId));
+  }
+
+  // Event RSVP operations
+  async rsvpToEvent(rsvp: InsertEventRsvp): Promise<EventRsvp> {
+    const [newRsvp] = await db
+      .insert(eventRsvps)
+      .values(rsvp)
+      .onConflictDoUpdate({
+        target: [eventRsvps.eventId, eventRsvps.userId],
+        set: { status: rsvp.status }
+      })
+      .returning();
+    return newRsvp;
+  }
+
+  async getUserRsvpForEvent(eventId: number, userId: number): Promise<EventRsvp | null> {
+    const rsvp = await db
+      .select()
+      .from(eventRsvps)
+      .where(and(eq(eventRsvps.eventId, eventId), eq(eventRsvps.userId, userId)))
+      .limit(1);
+    return rsvp[0] || null;
+  }
+
+  async getEventRsvps(eventId: number): Promise<Array<EventRsvp & { user: User }>> {
+    const results = await db
+      .select({
+        id: eventRsvps.id,
+        eventId: eventRsvps.eventId,
+        userId: eventRsvps.userId,
+        status: eventRsvps.status,
+        createdAt: eventRsvps.createdAt,
+        user: {
+          id: users.id,
+          name: users.name,
+          email: users.email,
+          role: users.role,
+        }
+      })
+      .from(eventRsvps)
+      .innerJoin(users, eq(eventRsvps.userId, users.id))
+      .where(eq(eventRsvps.eventId, eventId));
+    
+    return results as Array<EventRsvp & { user: User }>;
+  }
+
+  async getEventRsvpCount(eventId: number): Promise<{ going: number; notGoing: number }> {
+    const goingRsvps = await db.select().from(eventRsvps).where(
+      and(eq(eventRsvps.eventId, eventId), eq(eventRsvps.status, 'going'))
+    );
+    
+    const notGoingRsvps = await db.select().from(eventRsvps).where(
+      and(eq(eventRsvps.eventId, eventId), eq(eventRsvps.status, 'not_going'))
+    );
+
+    return {
+      going: goingRsvps.length,
+      notGoing: notGoingRsvps.length
+    };
   }
 
   async getNotification(id: number): Promise<Notification | undefined> {

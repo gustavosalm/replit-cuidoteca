@@ -78,6 +78,16 @@ export const postVotes = pgTable("post_votes", {
   uniqueUserPost: unique().on(table.postId, table.userId),
 }));
 
+export const eventRsvps = pgTable("event_rsvps", {
+  id: serial("id").primaryKey(),
+  eventId: integer("event_id").references(() => events.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  status: text("status").notNull(), // 'going' or 'not_going'
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  uniqueUserEvent: unique().on(table.eventId, table.userId),
+}));
+
 export const notifications = pgTable("notifications", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
@@ -337,6 +347,11 @@ export const insertPostVoteSchema = createInsertSchema(postVotes).omit({
   createdAt: true,
 });
 
+export const insertEventRsvpSchema = createInsertSchema(eventRsvps).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertNotificationSchema = createInsertSchema(notifications).omit({
   id: true,
   read: true,
@@ -391,6 +406,8 @@ export type Post = typeof posts.$inferSelect;
 export type InsertPost = z.infer<typeof insertPostSchema>;
 export type PostVote = typeof postVotes.$inferSelect;
 export type InsertPostVote = z.infer<typeof insertPostVoteSchema>;
+export type EventRsvp = typeof eventRsvps.$inferSelect;
+export type InsertEventRsvp = z.infer<typeof insertEventRsvpSchema>;
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 export type UniversityConnection = typeof universityConnections.$inferSelect;

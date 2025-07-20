@@ -5,7 +5,7 @@ import MobileNav from "@/components/layout/mobile-nav";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Plus, Edit, Trash2, CheckCircle, XCircle, MapPin } from "lucide-react";
+import { Calendar, Plus, Edit, Trash2, CheckCircle, XCircle, MapPin, Users } from "lucide-react";
 import EventModal from "@/components/modals/event-modal";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -22,30 +22,21 @@ export default function Events() {
     queryKey: ["/api/events"],
   });
 
-  const checkinMutation = useMutation({
-    mutationFn: async ({ eventId, status, childId }: { eventId: number; status: string; childId?: number }) => {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`/api/events/${eventId}/checkin`, {
-        method: "POST",
-        headers: { 
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
-        },
-        body: JSON.stringify({ status, childId }),
-      });
-      return response.json();
+  const rsvpMutation = useMutation({
+    mutationFn: async ({ eventId, status }: { eventId: number; status: string }) => {
+      return await apiRequest("POST", `/api/events/${eventId}/rsvp`, { status });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/events"] });
       toast({
-        title: "Check-in realizado",
+        title: "Resposta registrada",
         description: "Sua participação foi registrada com sucesso!",
       });
     },
     onError: () => {
       toast({
-        title: "Erro no check-in",
-        description: "Não foi possível registrar sua participação.",
+        title: "Erro ao responder",
+        description: "Não foi possível registrar sua resposta.",
         variant: "destructive",
       });
     },
@@ -145,13 +136,17 @@ export default function Events() {
                               {event.observations}
                             </p>
                           )}
-                          {user?.role === 'institution' && event.participations && (
-                            <div className="mt-2">
-                              <p className="text-xs text-muted-foreground">
-                                {event.participations.filter((p: any) => p.status === 'confirmed').length} confirmados, {event.participations.filter((p: any) => p.status === 'pending').length} pendentes
-                              </p>
+                          <div className="mt-2 flex items-center space-x-4">
+                            <div className="flex items-center text-sm text-muted-foreground">
+                              <Users className="h-4 w-4 mr-1" />
+                              <span>{event.rsvpCounts?.going || 0} confirmados</span>
                             </div>
-                          )}
+                            {event.rsvpCounts?.notGoing > 0 && (
+                              <div className="flex items-center text-sm text-muted-foreground">
+                                <span>{event.rsvpCounts.notGoing} não vão</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
                         <div className="flex items-center space-x-2">
                           {user?.role === 'institution' ? (
@@ -166,28 +161,32 @@ export default function Events() {
                               <Edit className="h-4 w-4" />
                             </Button>
                           ) : (
-                            <div className="flex space-x-1">
+                            <div className="flex flex-col space-y-1">
                               <Button
-                                variant="outline"
+                                variant={event.userRsvp?.status === 'going' ? 'default' : 'outline'}
                                 size="sm"
-                                onClick={() => checkinMutation.mutate({ 
+                                onClick={() => rsvpMutation.mutate({ 
                                   eventId: event.id, 
-                                  status: 'confirmed'
+                                  status: 'going'
                                 })}
-                                disabled={checkinMutation.isPending}
+                                disabled={rsvpMutation.isPending}
+                                className="text-xs"
                               >
-                                <CheckCircle className="h-4 w-4 text-green-600" />
+                                <CheckCircle className="h-4 w-4 mr-1" />
+                                Vou
                               </Button>
                               <Button
-                                variant="outline"
+                                variant={event.userRsvp?.status === 'not_going' ? 'default' : 'outline'}
                                 size="sm"
-                                onClick={() => checkinMutation.mutate({ 
+                                onClick={() => rsvpMutation.mutate({ 
                                   eventId: event.id, 
-                                  status: 'cancelled' 
+                                  status: 'not_going'
                                 })}
-                                disabled={checkinMutation.isPending}
+                                disabled={rsvpMutation.isPending}
+                                className="text-xs"
                               >
-                                <XCircle className="h-4 w-4 text-red-600" />
+                                <XCircle className="h-4 w-4 mr-1" />
+                                Não vou
                               </Button>
                             </div>
                           )}

@@ -205,9 +205,15 @@ export default function Community() {
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-2">
-                        <h4 className="font-medium text-foreground">
+                        <button
+                          className="font-medium text-foreground hover:text-primary transition-colors cursor-pointer"
+                          onClick={() => {
+                            // Navigate to user profile
+                            window.location.href = `/profile/${post.authorId}`;
+                          }}
+                        >
                           {post.author?.name}
-                        </h4>
+                        </button>
                         <span className="text-sm text-muted-foreground">
                           {formatTimeAgo(post.createdAt)}
                         </span>
@@ -238,7 +244,17 @@ export default function Community() {
                             <span className="ml-1">{post.downvotes || 0}</span>
                           </Button>
                         </div>
-                        <Button variant="ghost" size="sm">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => {
+                            // TODO: Implement reply functionality
+                            toast({
+                              title: "Em desenvolvimento",
+                              description: "A funcionalidade de resposta está sendo desenvolvida."
+                            });
+                          }}
+                        >
                           <MessageCircle className="h-4 w-4 mr-1" />
                           Responder
                         </Button>

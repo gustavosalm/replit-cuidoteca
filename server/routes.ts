@@ -526,15 +526,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Event routes
   app.get('/api/events', authenticateToken, async (req, res) => {
     try {
+      let events: any[] = [];
+      
       if (req.user.role === 'institution') {
         // Institutions get their own events
-        const events = await storage.getEventsByInstitution(req.user.id);
-        res.json(events);
+        events = await storage.getEventsByInstitution(req.user.id);
       } else {
-        // Parents and cuidadores get events they can participate in
-        const events = await storage.getEventsWithParticipationsByUser(req.user.id);
-        res.json(events);
+        // Parents and cuidadores get events from their connected institutions
+        const userConnections = await storage.getUserConnections(req.user.id);
+        
+        if (userConnections.length === 0) {
+          return res.json([]);
+        }
+        
+        for (const connection of userConnections) {
+          const institutionEvents = await storage.getEventsByInstitution(connection.institutionId);
+          events.push(...institutionEvents);
+        }
+        
+        // Sort by creation date (newest first)
+        events.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       }
+
+      // Enhance events with RSVP data
+      const enhancedEvents = await Promise.all(events.map(async (event) => {
+        const rsvpCounts = await storage.getEventRsvpCount(event.id);
+        let userRsvp = null;
+        
+        // Get user's RSVP if not an institution
+        if (req.user.role !== 'institution') {
+          userRsvp = await storage.getUserRsvpForEvent(event.id, req.user.id);
+        }
+        
+        return {
+          ...event,
+          rsvpCounts,
+          userRsvp
+        };
+      }));
+      
+      res.json(enhancedEvents);
     } catch (error) {
       console.error('Get events error:', error);
       res.status(500).json({ message: 'Failed to get events' });
@@ -624,6 +655,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Delete event error:', error);
       res.status(500).json({ message: 'Failed to delete event' });
+    }
+  });
+
+  // Event RSVP endpoints
+  app.post('/api/events/:id/rsvp', authenticateToken, async (req, res) => {
+    try {
+      const eventId = parseInt(req.params.id);
+      const { status } = req.body;
+
+      if (!['going', 'not_going'].includes(status)) {
+        return res.status(400).json({ message: 'Invalid RSVP status' });
+      }
+
+      const rsvp = await storage.rsvpToEvent({
+        eventId,
+        userId: req.user.id,
+        status
+      });
+
+      res.json(rsvp);
+    } catch (error) {
+      console.error('RSVP error:', error);
+      res.status(500).json({ message: 'Failed to RSVP to event' });
+    }
+  });
+
+  app.get('/api/events/:id/rsvp', authenticateToken, async (req, res) => {
+    try {
+      const eventId = parseInt(req.params.id);
+      const rsvp = await storage.getUserRsvpForEvent(eventId, req.user.id);
+      res.json(rsvp);
+    } catch (error) {
+      console.error('Get RSVP error:', error);
+      res.status(500).json({ message: 'Failed to get RSVP status' });
+    }
+  });
+
+  app.get('/api/events/:id/rsvps', authenticateToken, async (req, res) => {
+    try {
+      const eventId = parseInt(req.params.id);
+      const rsvps = await storage.getEventRsvps(eventId);
+      const counts = await storage.getEventRsvpCount(eventId);
+      
+      res.json({
+        rsvps,
+        counts
+      });
+    } catch (error) {
+      console.error('Get event RSVPs error:', error);
+      res.status(500).json({ message: 'Failed to get event RSVPs' });
     }
   });
 
