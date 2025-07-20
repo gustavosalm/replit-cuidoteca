@@ -8,7 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { X } from "lucide-react";
+
 
 interface CuidotecaModalProps {
   isOpen: boolean;
@@ -36,10 +36,8 @@ export default function CuidotecaModal({ isOpen, onClose, cuidoteca }: Cuidoteca
     name: cuidoteca?.name || '',
     hours: cuidoteca?.hours || '',
     days: cuidoteca?.days || [],
-    assignedCaretakers: cuidoteca?.assignedCaretakers || [],
     maxCapacity: cuidoteca?.maxCapacity || 20,
   });
-  const [caretakerInput, setCaretakerInput] = useState('');
   const [openingHour, setOpeningHour] = useState(cuidoteca?.hours?.split('-')[0] || '');
   const [closingHour, setClosingHour] = useState(cuidoteca?.hours?.split('-')[1] || '');
 
@@ -95,10 +93,8 @@ export default function CuidotecaModal({ isOpen, onClose, cuidoteca }: Cuidoteca
       name: '',
       hours: '',
       days: [],
-      assignedCaretakers: [],
       maxCapacity: 20,
     });
-    setCaretakerInput('');
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -132,22 +128,7 @@ export default function CuidotecaModal({ isOpen, onClose, cuidoteca }: Cuidoteca
     }));
   };
 
-  const addCaretaker = () => {
-    if (caretakerInput.trim()) {
-      setFormData(prev => ({
-        ...prev,
-        assignedCaretakers: [...prev.assignedCaretakers, caretakerInput.trim()]
-      }));
-      setCaretakerInput('');
-    }
-  };
 
-  const removeCaretaker = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      assignedCaretakers: prev.assignedCaretakers.filter((_, i) => i !== index)
-    }));
-  };
 
   const handleClose = () => {
     onClose();
@@ -240,37 +221,7 @@ export default function CuidotecaModal({ isOpen, onClose, cuidoteca }: Cuidoteca
             />
           </div>
 
-          <div>
-            <Label>Cuidadores Designados</Label>
-            <div className="flex gap-2 mt-2">
-              <Input
-                value={caretakerInput}
-                onChange={(e) => setCaretakerInput(e.target.value)}
-                placeholder="Nome do cuidador"
-                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addCaretaker())}
-              />
-              <Button type="button" onClick={addCaretaker} variant="outline">
-                Adicionar
-              </Button>
-            </div>
-            {formData.assignedCaretakers.length > 0 && (
-              <div className="mt-2 space-y-1">
-                {formData.assignedCaretakers.map((caretaker, index) => (
-                  <div key={index} className="flex items-center justify-between bg-muted px-3 py-2 rounded">
-                    <span className="text-sm">{caretaker}</span>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeCaretaker(index)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+
 
           <div className="flex justify-end space-x-2 pt-4">
             <Button type="button" variant="outline" onClick={handleClose}>
