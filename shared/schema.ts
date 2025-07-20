@@ -355,7 +355,7 @@ export type PostWithAuthor = Post & {
   author: User;
 };
 
-export type ScheduleWithChild = Schedule & {
+export type EventParticipationWithChild = EventParticipation & {
   child: Child;
 };
 

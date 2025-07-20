@@ -114,9 +114,15 @@ Preferred communication style: Simple, everyday language.
 - **JWT Secret**: Configurable secret key for token signing
 - **Development Tools**: Replit-specific plugins for development environment
 
-## Recent Changes (July 19, 2025)
+## Recent Changes
 
-### Cuidador Role Implementation
+### July 20, 2025 - Application Debug and Fix
+- **Database Configuration**: Fixed PostgreSQL database connection by properly provisioning database environment variables
+- **Schema Error**: Corrected undefined 'Schedule' type reference in schema.ts by replacing with EventParticipationWithChild
+- **Database Schema Push**: Successfully pushed all schema changes to PostgreSQL database using Drizzle Kit
+- **Application Status**: Application now running successfully on port 5000 with no LSP errors
+
+### July 19, 2025 - Cuidador Role Implementation
 - **Added Third User Role**: Implemented "cuidador" role alongside existing parent and institution roles
 - **Separate Enrollment System**: Created independent cuidador enrollment process without child dependency
 - **Database Schema**: Added cuidadorEnrollments table for caregiver-specific enrollments
