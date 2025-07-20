@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import React from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,15 +8,30 @@ import { useLocation } from "wouter";
 
 export default function EventsList() {
   const [, setLocation] = useLocation();
+  const queryClient = useQueryClient();
   
-  const { data: events = [], isLoading } = useQuery({
+  const { data: events = [], isLoading, error } = useQuery({
     queryKey: ["/api/events"],
     staleTime: 0, // Always fetch fresh data for debugging
     cacheTime: 0, // Don't cache the response
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 
   // Debug logging
-  console.log('Dashboard Events Debug:', { events, isLoading, eventsLength: Array.isArray(events) ? events.length : 'not array' });
+  console.log('Dashboard Events Debug:', { 
+    events, 
+    isLoading, 
+    error,
+    eventsLength: Array.isArray(events) ? events.length : 'not array',
+    eventsType: typeof events,
+    eventsData: events 
+  });
+
+  // Force invalidate cache on mount for debugging
+  React.useEffect(() => {
+    queryClient.invalidateQueries({ queryKey: ["/api/events"] });
+  }, [queryClient]);
 
 
 

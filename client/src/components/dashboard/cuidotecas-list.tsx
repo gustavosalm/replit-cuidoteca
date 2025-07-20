@@ -21,6 +21,7 @@ export default function CuidotecasList() {
 
   const { data: enrollments = [] } = useQuery({
     queryKey: ["/api/cuidotecas/enrollments"],
+    enabled: false, // Disable this query for now since it requires a cuidoteca ID
   });
 
   const deleteMutation = useMutation({
