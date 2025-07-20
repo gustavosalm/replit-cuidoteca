@@ -116,7 +116,13 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### July 20, 2025 - Event Location Feature & Session Management Fix
+### July 20, 2025 - Event System Modernization & Location Feature
+- **Event Creation Modernization**: Converted from weekday/period selection to specific date and time format
+  - Replaced day-of-week selector with date picker for specific event dates
+  - Removed morning/afternoon/evening period selection (redundant with specific times)
+  - Updated database schema: removed day_of_week and period columns, added event_date column
+  - Enhanced time selection with HTML5 time inputs for precise start/end times
+  - Updated event display to show formatted date and time range
 - **Event Location Feature**: Added location field to event creation and display system
   - Updated database schema to include location column in events table
   - Enhanced event creation modal with location input field

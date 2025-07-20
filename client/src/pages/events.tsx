@@ -51,19 +51,9 @@ export default function Events() {
     },
   });
 
-  const dayTranslations: { [key: string]: string } = {
-    monday: "Segunda-feira",
-    tuesday: "Terça-feira",
-    wednesday: "Quarta-feira",
-    thursday: "Quinta-feira",
-    friday: "Sexta-feira",
-  };
 
-  const periodTranslations: { [key: string]: string } = {
-    morning: "Manhã (08:00 - 12:00)",
-    afternoon: "Tarde (14:00 - 18:00)",
-    full_day: "Integral (08:00 - 18:00)",
-  };
+
+
 
 
 
@@ -101,7 +91,7 @@ export default function Events() {
                       </div>
                     ))}
                   </div>
-                ) : !events?.length ? (
+                ) : !Array.isArray(events) || !events.length ? (
                   <div className="text-center py-12">
                     <Calendar className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-foreground mb-2">
@@ -122,7 +112,7 @@ export default function Events() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {events.map((event: any) => (
+                    {Array.isArray(events) && events.map((event: any) => (
                       <div
                         key={event.id}
                         className="flex items-center p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors"
@@ -137,7 +127,7 @@ export default function Events() {
                             </h4>
                           </div>
                           <p className="text-sm text-muted-foreground mb-1">
-                            {dayTranslations[event.dayOfWeek]} - {periodTranslations[event.period]}
+                            {event.eventDate && new Date(event.eventDate).toLocaleDateString('pt-BR')} - {event.startTime} às {event.endTime}
                           </p>
                           {event.location && (
                             <div className="flex items-center text-sm text-muted-foreground mb-1">

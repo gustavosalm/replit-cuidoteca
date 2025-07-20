@@ -12,19 +12,7 @@ export default function EventsList() {
     queryKey: ["/api/events"],
   });
 
-  const dayTranslations: { [key: string]: string } = {
-    monday: "Segunda-feira",
-    tuesday: "Terça-feira",
-    wednesday: "Quarta-feira",
-    thursday: "Quinta-feira",
-    friday: "Sexta-feira",
-  };
 
-  const periodTranslations: { [key: string]: string } = {
-    morning: "Manhã (08:00 - 12:00)",
-    afternoon: "Tarde (14:00 - 18:00)",
-    full_day: "Integral (08:00 - 18:00)",
-  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -77,7 +65,7 @@ export default function EventsList() {
           <CardTitle>Próximos Eventos</CardTitle>
         </CardHeader>
         <CardContent>
-          {!events.length ? (
+          {!Array.isArray(events) || !events.length ? (
             <div className="text-center py-8">
               <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <p className="text-muted-foreground">
@@ -92,7 +80,7 @@ export default function EventsList() {
             </div>
           ) : (
             <div className="space-y-4">
-              {events.map((event: any) => (
+              {Array.isArray(events) && events.map((event: any) => (
                 <div
                   key={event.id}
                   className="flex items-center p-4 border border-border rounded-lg"
@@ -105,7 +93,7 @@ export default function EventsList() {
                       {event.title}
                     </h4>
                     <p className="text-sm text-muted-foreground">
-                      {dayTranslations[event.dayOfWeek]} - {periodTranslations[event.period]}
+                      {event.eventDate && new Date(event.eventDate).toLocaleDateString('pt-BR')} - {event.startTime} às {event.endTime}
                     </p>
                     {event.location && (
                       <div className="flex items-center text-sm text-muted-foreground">

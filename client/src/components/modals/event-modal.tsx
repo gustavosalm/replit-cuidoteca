@@ -23,8 +23,7 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
     title: "",
     description: "",
     location: "",
-    dayOfWeek: "",
-    period: "",
+    eventDate: "",
     startTime: "",
     endTime: "",
     observations: "",
@@ -36,8 +35,7 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
         title: event.title || "",
         description: event.description || "",
         location: event.location || "",
-        dayOfWeek: event.dayOfWeek || "",
-        period: event.period || "",
+        eventDate: event.eventDate || "",
         startTime: event.startTime || "",
         endTime: event.endTime || "",
         observations: event.observations || "",
@@ -47,8 +45,7 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
         title: "",
         description: "",
         location: "",
-        dayOfWeek: "",
-        period: "",
+        eventDate: "",
         startTime: "",
         endTime: "",
         observations: "",
@@ -119,10 +116,10 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.title || !formData.dayOfWeek || !formData.period) {
+    if (!formData.title || !formData.eventDate || !formData.startTime || !formData.endTime) {
       toast({
         title: "Campos obrigatórios",
-        description: "Por favor, preencha todos os campos obrigatórios.",
+        description: "Por favor, preencha título, data, horário de início e fim.",
         variant: "destructive",
       });
       return;
@@ -134,20 +131,6 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
       createEventMutation.mutate(formData);
     }
   };
-
-  const dayOptions = [
-    { value: "monday", label: "Segunda-feira" },
-    { value: "tuesday", label: "Terça-feira" },
-    { value: "wednesday", label: "Quarta-feira" },
-    { value: "thursday", label: "Quinta-feira" },
-    { value: "friday", label: "Sexta-feira" },
-  ];
-
-  const periodOptions = [
-    { value: "morning", label: "Manhã" },
-    { value: "afternoon", label: "Tarde" },
-    { value: "full_day", label: "Dia inteiro" },
-  ];
 
   const timeOptions = [
     { value: "07:00", label: "07:00" },
@@ -227,71 +210,38 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="dayOfWeek">Dia da Semana *</Label>
-              <Select value={formData.dayOfWeek} onValueChange={(value) => setFormData({ ...formData, dayOfWeek: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o dia" />
-                </SelectTrigger>
-                <SelectContent>
-                  {dayOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="period">Período *</Label>
-              <Select value={formData.period} onValueChange={(value) => setFormData({ ...formData, period: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o período" />
-                </SelectTrigger>
-                <SelectContent>
-                  {periodOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="eventDate">Data do Evento *</Label>
+            <Input
+              id="eventDate"
+              type="date"
+              value={formData.eventDate}
+              onChange={(e) => setFormData({ ...formData, eventDate: e.target.value })}
+              required
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="startTime">Horário de Início</Label>
-              <Select value={formData.startTime} onValueChange={(value) => setFormData({ ...formData, startTime: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o horário" />
-                </SelectTrigger>
-                <SelectContent>
-                  {timeOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label htmlFor="startTime">Horário de Início *</Label>
+              <Input
+                id="startTime"
+                type="time"
+                value={formData.startTime}
+                onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
+                required
+              />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="endTime">Horário de Término</Label>
-              <Select value={formData.endTime} onValueChange={(value) => setFormData({ ...formData, endTime: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o horário" />
-                </SelectTrigger>
-                <SelectContent>
-                  {timeOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label htmlFor="endTime">Horário de Término *</Label>
+              <Input
+                id="endTime"
+                type="time"
+                value={formData.endTime}
+                onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
+                required
+              />
             </div>
           </div>
 
