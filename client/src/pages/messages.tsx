@@ -8,16 +8,25 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { Send, User, Calendar } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Send, User, Calendar, MessageSquare, Users } from "lucide-react";
 import { format } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import type { Message } from "@shared/schema";
 
 export default function Messages() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const queryClient = useQueryClient();
   const [location, setLocation] = useLocation();
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [messageText, setMessageText] = useState("");
+  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
+  const [bulkMessageText, setBulkMessageText] = useState("");
+  const [selectedTargetGroup, setSelectedTargetGroup] = useState("");
 
   // Handle URL query parameter for starting new conversations
   useEffect(() => {
@@ -55,25 +64,36 @@ export default function Messages() {
   // Send message mutation
   const sendMessageMutation = useMutation({
     mutationFn: async (data: { receiverId: number; content: string }) => {
-      const response = await fetch("/api/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to send message");
-      }
-
-      return response.json();
+      return apiRequest('/api/messages', 'POST', data);
     },
     onSuccess: () => {
       setMessageText("");
       queryClient.invalidateQueries({ queryKey: ["/api/messages", selectedUserId] });
       queryClient.invalidateQueries({ queryKey: ["/api/messages/conversations"] });
+    },
+  });
+
+  // Send bulk message mutation (for institutions)
+  const sendBulkMessageMutation = useMutation({
+    mutationFn: async (data: { targetGroup: string; content: string }) => {
+      return apiRequest('/api/messages/bulk', 'POST', data);
+    },
+    onSuccess: (response) => {
+      setBulkMessageText("");
+      setSelectedTargetGroup("");
+      setBulkDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/messages/conversations"] });
+      toast({
+        title: "Sucesso",
+        description: `Mensagem enviada para ${response.recipientCount} usuários!`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro",
+        description: error.message || "Falha ao enviar mensagem em massa",
+        variant: "destructive",
+      });
     },
   });
 
@@ -103,10 +123,74 @@ export default function Messages() {
     <div className="container mx-auto p-6">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">Mensagens</h1>
-        <Button variant="outline" onClick={() => setLocation("/")}>
-          <Calendar className="h-4 w-4 mr-2" />
-          Dashboard
-        </Button>
+        <div className="flex gap-2">
+          {user.role === 'institution' && (
+            <Dialog open={bulkDialogOpen} onOpenChange={setBulkDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <Users className="h-4 w-4 mr-2" />
+                  Mensagem em Massa
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Enviar Mensagem em Massa</DialogTitle>
+                  <DialogDescription>
+                    Envie uma mensagem para todos os usuários conectados à sua instituição.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Destinatários</label>
+                    <Select value={selectedTargetGroup} onValueChange={setSelectedTargetGroup}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o grupo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="parents">Apenas Pais</SelectItem>
+                        <SelectItem value="cuidadores">Apenas Cuidadores</SelectItem>
+                        <SelectItem value="all">Todos (Pais e Cuidadores)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Mensagem</label>
+                    <Textarea
+                      placeholder="Digite sua mensagem..."
+                      value={bulkMessageText}
+                      onChange={(e) => setBulkMessageText(e.target.value)}
+                      className="min-h-[100px]"
+                    />
+                  </div>
+                  
+                  <div className="flex justify-end gap-2">
+                    <Button variant="outline" onClick={() => setBulkDialogOpen(false)}>
+                      Cancelar
+                    </Button>
+                    <Button 
+                      onClick={() => {
+                        if (selectedTargetGroup && bulkMessageText.trim()) {
+                          sendBulkMessageMutation.mutate({
+                            targetGroup: selectedTargetGroup,
+                            content: bulkMessageText.trim()
+                          });
+                        }
+                      }}
+                      disabled={!selectedTargetGroup || !bulkMessageText.trim() || sendBulkMessageMutation.isPending}
+                    >
+                      {sendBulkMessageMutation.isPending ? "Enviando..." : "Enviar"}
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
+          <Button variant="outline" onClick={() => setLocation("/")}>
+            <Calendar className="h-4 w-4 mr-2" />
+            Dashboard
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[600px]">

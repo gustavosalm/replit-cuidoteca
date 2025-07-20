@@ -1652,6 +1652,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Bulk message sending for institutions
+  app.post('/api/messages/bulk', authenticateToken, async (req, res) => {
+    try {
+      if (req.user.role !== 'institution') {
+        return res.status(403).json({ message: 'Only institutions can send bulk messages' });
+      }
+
+      const { targetGroup, content } = req.body;
+      
+      if (!content || !targetGroup) {
+        return res.status(400).json({ message: 'Content and target group are required' });
+      }
+      
+      // Get connected users based on target group
+      const connectedUsers = await storage.getInstitutionConnectedUsers(req.user.id);
+      let targetUsers = [];
+      
+      if (targetGroup === 'parents') {
+        targetUsers = connectedUsers.filter(user => user.role === 'parent');
+      } else if (targetGroup === 'cuidadores') {
+        targetUsers = connectedUsers.filter(user => user.role === 'cuidador');
+      } else if (targetGroup === 'all') {
+        targetUsers = connectedUsers.filter(user => user.role === 'parent' || user.role === 'cuidador');
+      } else {
+        return res.status(400).json({ message: 'Invalid target group. Use "parents", "cuidadores", or "all"' });
+      }
+      
+      if (targetUsers.length === 0) {
+        return res.status(400).json({ message: 'No users found for the selected group' });
+      }
+      
+      const recipientIds = targetUsers.map(user => user.id);
+      const messages = await storage.sendBulkMessage(req.user.id, recipientIds, content);
+      
+      res.status(201).json({ 
+        message: `Message sent to ${targetUsers.length} users`,
+        recipientCount: targetUsers.length,
+        sentMessages: messages.length
+      });
+    } catch (error) {
+      console.error('Send bulk message error:', error);
+      res.status(500).json({ message: 'Failed to send bulk message' });
+    }
+  });
+
   // Get enrolled children for cuidotecas
   app.get('/api/cuidotecas/enrollments', authenticateToken, async (req, res) => {
     try {

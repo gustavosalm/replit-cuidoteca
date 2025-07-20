@@ -1177,6 +1177,21 @@ export class DatabaseStorage implements IStorage {
     return newMessage;
   }
 
+  async sendBulkMessage(senderId: number, recipientIds: number[], content: string): Promise<Message[]> {
+    const messageValues = recipientIds.map(recipientId => ({
+      senderId,
+      receiverId: recipientId,
+      content
+    }));
+    
+    const newMessages = await db
+      .insert(messages)
+      .values(messageValues)
+      .returning();
+    
+    return newMessages;
+  }
+
   async markMessageAsRead(messageId: number): Promise<void> {
     await db
       .update(messages)

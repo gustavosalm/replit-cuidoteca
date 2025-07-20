@@ -64,10 +64,7 @@ export default function Informacoes() {
 
   const createDocumentMutation = useMutation({
     mutationFn: async (data: DocumentFormData & { fileUrl: string; fileSize: number; fileType: string }) => {
-      return apiRequest('/api/documents', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      });
+      return apiRequest('/api/documents', 'POST', data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/documents'] });
@@ -90,9 +87,7 @@ export default function Informacoes() {
 
   const deleteDocumentMutation = useMutation({
     mutationFn: async (id: number) => {
-      return apiRequest(`/api/documents/${id}`, {
-        method: 'DELETE',
-      });
+      return apiRequest(`/api/documents/${id}`, 'DELETE');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/documents'] });
@@ -151,11 +146,11 @@ export default function Informacoes() {
     }
   };
 
-  const downloadDocument = (document: InstitutionDocument) => {
+  const downloadDocument = (doc: InstitutionDocument) => {
     try {
       const link = document.createElement('a');
-      link.href = document.fileUrl;
-      link.download = document.fileName;
+      link.href = doc.fileUrl;
+      link.download = doc.fileName;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -222,6 +217,7 @@ export default function Informacoes() {
                           <Textarea 
                             placeholder="Descrição opcional do documento"
                             {...field}
+                            value={field.value || ""}
                           />
                         </FormControl>
                         <FormMessage />
@@ -280,7 +276,7 @@ export default function Informacoes() {
             </Card>
           ))}
         </div>
-      ) : documents.length === 0 ? (
+      ) : !documents || (documents as any[]).length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <FileText className="h-12 w-12 text-muted-foreground mb-4" />
@@ -295,7 +291,7 @@ export default function Informacoes() {
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {documents.map((document: InstitutionDocument & { institutionName?: string; authorName?: string }) => (
+          {(documents as Array<InstitutionDocument & { institutionName?: string; authorName?: string }>).map((document) => (
             <Card key={document.id} className="hover:shadow-lg transition-shadow">
               <CardHeader>
                 <CardTitle className="flex items-start justify-between">
@@ -327,7 +323,7 @@ export default function Informacoes() {
                     )}
                     <div className="flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
-                      {formatDate(document.createdAt)}
+                      {formatDate(document.createdAt.toString())}
                     </div>
                   </div>
                 </CardDescription>

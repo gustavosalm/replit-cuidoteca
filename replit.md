@@ -116,7 +116,25 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### July 20, 2025 - Community Voting System & Institution Post Management
+### July 20, 2025 - Institution Messaging System & Bulk Communication
+- **Bulk Messaging Feature**: Implemented comprehensive messaging system for institutions
+  - Institutions can send messages to individual connected users or groups
+  - Added bulk messaging capability for sending to all parents, all cuidadores, or both groups combined
+  - Bulk messaging dialog with target group selection (parents/cuidadores/all)
+  - Real-time message sending with success notifications showing recipient count
+  - Enhanced messages page with institutional messaging capabilities
+- **Messaging API Enhancement**: Extended messaging backend for institutional communication
+  - Added `/api/messages/bulk` endpoint for group messaging
+  - Bulk message validation and target group filtering
+  - Enhanced storage methods for bulk message creation and delivery
+  - Role-based access control ensuring only institutions can send bulk messages
+- **User Interface Improvements**: Enhanced messaging page for institutional users
+  - Added "Mensagem em Massa" button visible only to institution users
+  - Comprehensive bulk messaging modal with target selection and content input
+  - Toast notifications for successful bulk message delivery
+  - Maintained individual messaging functionality alongside bulk features
+
+### July 20, 2025 - Community Voting System & Institution Post Management  
 - **Upvote/Downvote System**: Replaced simple likes with comprehensive voting functionality
   - Added upvote and downvote buttons with green/red styling for clear visual distinction
   - Implemented vote tracking table to prevent duplicate voting from same user

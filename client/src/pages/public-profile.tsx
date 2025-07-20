@@ -222,24 +222,14 @@ export default function PublicProfile() {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Voltar
           </Button>
-          <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => setLocation("/")}
-            >
-              <Home className="h-4 w-4 mr-2" />
-              Início
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => setLocation("/dashboard")}
-            >
-              <User className="h-4 w-4 mr-2" />
-              Dashboard
-            </Button>
-          </div>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setLocation("/")}
+          >
+            <Home className="h-4 w-4 mr-2" />
+            Início
+          </Button>
         </div>
 
         {/* User Profile Card */}
