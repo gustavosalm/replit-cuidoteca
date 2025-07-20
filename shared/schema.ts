@@ -42,6 +42,8 @@ export const events = pgTable("events", {
   description: text("description"),
   dayOfWeek: dayOfWeekEnum("day_of_week").notNull(),
   period: periodEnum("period").notNull(),
+  startTime: text("start_time"),
+  endTime: text("end_time"),
   observations: text("observations"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

@@ -24,6 +24,8 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
     description: "",
     dayOfWeek: "",
     period: "",
+    startTime: "",
+    endTime: "",
     observations: "",
   });
 
@@ -34,6 +36,8 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
         description: event.description || "",
         dayOfWeek: event.dayOfWeek || "",
         period: event.period || "",
+        startTime: event.startTime || "",
+        endTime: event.endTime || "",
         observations: event.observations || "",
       });
     } else {
@@ -42,6 +46,8 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
         description: "",
         dayOfWeek: "",
         period: "",
+        startTime: "",
+        endTime: "",
         observations: "",
       });
     }
@@ -140,6 +146,36 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
     { value: "full_day", label: "Dia inteiro" },
   ];
 
+  const timeOptions = [
+    { value: "07:00", label: "07:00" },
+    { value: "07:30", label: "07:30" },
+    { value: "08:00", label: "08:00" },
+    { value: "08:30", label: "08:30" },
+    { value: "09:00", label: "09:00" },
+    { value: "09:30", label: "09:30" },
+    { value: "10:00", label: "10:00" },
+    { value: "10:30", label: "10:30" },
+    { value: "11:00", label: "11:00" },
+    { value: "11:30", label: "11:30" },
+    { value: "12:00", label: "12:00" },
+    { value: "12:30", label: "12:30" },
+    { value: "13:00", label: "13:00" },
+    { value: "13:30", label: "13:30" },
+    { value: "14:00", label: "14:00" },
+    { value: "14:30", label: "14:30" },
+    { value: "15:00", label: "15:00" },
+    { value: "15:30", label: "15:30" },
+    { value: "16:00", label: "16:00" },
+    { value: "16:30", label: "16:30" },
+    { value: "17:00", label: "17:00" },
+    { value: "17:30", label: "17:30" },
+    { value: "18:00", label: "18:00" },
+    { value: "18:30", label: "18:30" },
+    { value: "19:00", label: "19:00" },
+    { value: "19:30", label: "19:30" },
+    { value: "20:00", label: "20:00" },
+  ];
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
@@ -202,6 +238,40 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
                 </SelectTrigger>
                 <SelectContent>
                   {periodOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="startTime">Horário de Início</Label>
+              <Select value={formData.startTime} onValueChange={(value) => setFormData({ ...formData, startTime: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o horário" />
+                </SelectTrigger>
+                <SelectContent>
+                  {timeOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="endTime">Horário de Término</Label>
+              <Select value={formData.endTime} onValueChange={(value) => setFormData({ ...formData, endTime: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o horário" />
+                </SelectTrigger>
+                <SelectContent>
+                  {timeOptions.map((option) => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
                     </SelectItem>
