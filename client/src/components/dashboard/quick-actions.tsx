@@ -63,7 +63,7 @@ export default function QuickActions() {
                     onClick={() => setIsEventModalOpen(true)}
                   >
                     <Calendar className="h-5 w-5 text-blue-600 mr-3" />
-                    <span>Novo Event</span>
+                    <span>Novo Evento</span>
                   </Button>
                 </>
               )}
