@@ -211,14 +211,7 @@ export default function Profile() {
       return;
     }
 
-    if (passwordData.newPassword.length < 6) {
-      toast({
-        title: "Senha muito curta",
-        description: "A nova senha deve ter pelo menos 6 caracteres",
-        variant: "destructive",
-      });
-      return;
-    }
+
 
     changePasswordMutation.mutate({
       currentPassword: passwordData.currentPassword,
@@ -502,7 +495,7 @@ export default function Profile() {
                     type="password"
                     value={passwordData.newPassword}
                     onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                    placeholder="Digite sua nova senha (min. 6 caracteres)"
+                    placeholder="Digite sua nova senha"
                     required
                   />
                 </div>
