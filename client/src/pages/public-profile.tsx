@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Mail, Phone, MapPin, GraduationCap, User, Building, MessageCircle, UserPlus, Users, UserMinus } from "lucide-react";
+import { ArrowLeft, Mail, Phone, MapPin, GraduationCap, User, Building, MessageCircle, UserPlus, Users, UserMinus, Home, X } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -112,6 +112,26 @@ export default function PublicProfile() {
     },
   });
 
+  const cancelConnectionMutation = useMutation({
+    mutationFn: async (connectionId: number) => {
+      await apiRequest("DELETE", `/api/connections/${connectionId}`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Solicitação cancelada",
+        description: "A solicitação de conexão foi cancelada com sucesso.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/users", id, "connection-status"] });
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Não foi possível cancelar a solicitação de conexão.",
+        variant: "destructive",
+      });
+    },
+  });
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-neutral p-4">
@@ -160,14 +180,24 @@ export default function PublicProfile() {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Voltar
           </Button>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => setLocation("/dashboard")}
-          >
-            <User className="h-4 w-4 mr-2" />
-            Dashboard
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setLocation("/")}
+            >
+              <Home className="h-4 w-4 mr-2" />
+              Início
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setLocation("/dashboard")}
+            >
+              <User className="h-4 w-4 mr-2" />
+              Dashboard
+            </Button>
+          </div>
         </div>
 
         {/* User Profile Card */}
@@ -319,14 +349,44 @@ export default function PublicProfile() {
                     </AlertDialogContent>
                   </AlertDialog>
                 ) : connectionStatus?.pending ? (
-                  <Button 
-                    variant="outline"
-                    className="flex-1"
-                    disabled
-                  >
-                    <UserPlus className="h-4 w-4 mr-2" />
-                    Solicitação Enviada
-                  </Button>
+                  <>
+                    <Button 
+                      variant="outline"
+                      className="flex-1"
+                      disabled
+                    >
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Aguardando Aprovação
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button 
+                          variant="outline"
+                          size="sm"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Cancelar solicitação</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Tem certeza que deseja cancelar a solicitação de conexão com {user.name}? 
+                            Você poderá enviar uma nova solicitação posteriormente.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => cancelConnectionMutation.mutate(connectionStatus.connectionId)}
+                            disabled={cancelConnectionMutation.isPending}
+                          >
+                            {cancelConnectionMutation.isPending ? "Cancelando..." : "Sim, cancelar"}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </>
                 ) : (
                   <Button 
                     variant="outline"
