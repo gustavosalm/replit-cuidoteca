@@ -106,7 +106,11 @@ export default function Events() {
                     {Array.isArray(events) && events.map((event: any) => (
                       <div
                         key={event.id}
-                        className="flex items-center p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors"
+                        className="flex items-center p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                        onClick={() => {
+                          // Navigate to event detail page
+                          window.location.href = `/events/${event.id}`;
+                        }}
                       >
                         <div className="flex-shrink-0 w-12 h-12 bg-primary rounded-full flex items-center justify-center">
                           <Calendar className="h-6 w-6 text-white" />
@@ -148,12 +152,13 @@ export default function Events() {
                             )}
                           </div>
                         </div>
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-2" onClick={(e) => e.stopPropagation()}>
                           {user?.role === 'institution' ? (
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 setEditingEvent(event);
                                 setIsEventModalOpen(true);
                               }}
@@ -165,10 +170,13 @@ export default function Events() {
                               <Button
                                 variant={event.userRsvp?.status === 'going' ? 'default' : 'outline'}
                                 size="sm"
-                                onClick={() => rsvpMutation.mutate({ 
-                                  eventId: event.id, 
-                                  status: 'going'
-                                })}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  rsvpMutation.mutate({ 
+                                    eventId: event.id, 
+                                    status: 'going'
+                                  });
+                                }}
                                 disabled={rsvpMutation.isPending}
                                 className="text-xs"
                               >
@@ -178,10 +186,13 @@ export default function Events() {
                               <Button
                                 variant={event.userRsvp?.status === 'not_going' ? 'default' : 'outline'}
                                 size="sm"
-                                onClick={() => rsvpMutation.mutate({ 
-                                  eventId: event.id, 
-                                  status: 'not_going'
-                                })}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  rsvpMutation.mutate({ 
+                                    eventId: event.id, 
+                                    status: 'not_going'
+                                  });
+                                }}
                                 disabled={rsvpMutation.isPending}
                                 className="text-xs"
                               >

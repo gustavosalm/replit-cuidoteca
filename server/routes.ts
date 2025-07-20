@@ -572,6 +572,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get single event
+  app.get('/api/events/:id', authenticateToken, async (req, res) => {
+    try {
+      const eventId = parseInt(req.params.id);
+      const event = await storage.getEvent(eventId);
+      
+      if (!event) {
+        return res.status(404).json({ message: 'Event not found' });
+      }
+      
+      // Check if user has access to this event
+      const hasAccess = req.user.role === 'institution' || 
+        await storage.isUserConnectedToInstitution(req.user.id, event.institutionId);
+      
+      if (!hasAccess) {
+        return res.status(403).json({ message: 'No access to this event' });
+      }
+      
+      // Get RSVP counts
+      const rsvpCounts = await storage.getEventRsvpCount(event.id);
+      
+      // Get user's RSVP if not an institution
+      let userRsvp = null;
+      if (req.user.role !== 'institution') {
+        userRsvp = await storage.getUserRsvpForEvent(event.id, req.user.id);
+      }
+      
+      res.json({
+        ...event,
+        rsvpCounts,
+        userRsvp
+      });
+    } catch (error) {
+      console.error('Get event error:', error);
+      res.status(500).json({ message: 'Failed to get event' });
+    }
+  });
+
   // Create event (only institutions)
   app.post('/api/events', authenticateToken, async (req, res) => {
     try {

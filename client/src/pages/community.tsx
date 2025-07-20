@@ -200,9 +200,15 @@ export default function Community() {
               <Card key={post.id}>
                 <CardContent className="p-6">
                   <div className="flex items-start space-x-3">
-                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                    <button
+                      className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center hover:bg-blue-200 transition-colors cursor-pointer"
+                      onClick={() => {
+                        // Navigate to user profile
+                        window.location.href = `/profile/${post.authorId}`;
+                      }}
+                    >
                       <User className="h-5 w-5 text-primary" />
-                    </div>
+                    </button>
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-2">
                         <button
