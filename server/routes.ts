@@ -1011,6 +1011,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: 'Child not found or not owned by user' });
       }
       
+      // Get cuidoteca details to validate age range
+      const cuidoteca = await storage.getCuidoteca(cuidotecaId);
+      if (!cuidoteca) {
+        return res.status(404).json({ message: 'Cuidoteca not found' });
+      }
+      
+      // Check if child's age is within the cuidoteca's age range
+      if (child.age < cuidoteca.minAge || child.age > cuidoteca.maxAge) {
+        return res.status(400).json({ 
+          message: `Idade da criança (${child.age} anos) está fora da faixa etária aceita pela cuidoteca (${cuidoteca.minAge}-${cuidoteca.maxAge} anos)` 
+        });
+      }
+      
       const enrollment = await storage.enrollChildInCuidoteca({
         cuidotecaId,
         childId,
@@ -1019,14 +1032,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         requestedHours
       });
       
-      // Get cuidoteca details to notify the institution
-      const cuidoteca = await storage.getCuidoteca(cuidotecaId);
-      if (cuidoteca) {
-        await storage.createNotification({
-          userId: cuidoteca.institutionId,
-          message: `Nova inscrição: ${child.name} se inscreveu na cuidoteca ${cuidoteca.name}`
-        });
-      }
+      // Notify the institution about the new enrollment
+      await storage.createNotification({
+        userId: cuidoteca.institutionId,
+        message: `Nova inscrição: ${child.name} se inscreveu na cuidoteca ${cuidoteca.name}`,
+        type: 'enrollment_request'
+      });
       
       res.status(201).json(enrollment);
     } catch (error) {

@@ -92,6 +92,8 @@ export const cuidotecas = pgTable("cuidotecas", {
   days: text("days").array().notNull(), // array of days
   assignedCaretakers: text("assigned_caretakers").array().default([]).notNull(),
   maxCapacity: integer("max_capacity").default(20).notNull(),
+  minAge: integer("min_age").default(0).notNull(),
+  maxAge: integer("max_age").default(12).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

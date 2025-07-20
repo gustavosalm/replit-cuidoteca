@@ -172,6 +172,10 @@ export default function CuidotecasList() {
                           <Users className="h-4 w-4 mr-2" />
                           <span>Máx: {cuidoteca.maxCapacity} crianças</span>
                         </div>
+                        <div className="flex items-center">
+                          <span className="h-4 w-4 mr-2 text-xs">👶</span>
+                          <span>{cuidoteca.minAge || 0}-{cuidoteca.maxAge || 12} anos</span>
+                        </div>
                       </div>
 
                       {cuidoteca.assignedCaretakers?.length > 0 && (

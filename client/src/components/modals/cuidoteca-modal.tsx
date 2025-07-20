@@ -31,12 +31,30 @@ const HOUR_OPTIONS = [
   '18:00', '18:30', '19:00', '19:30', '20:00'
 ];
 
+const AGE_OPTIONS = [
+  { value: 0, label: '0 anos' },
+  { value: 1, label: '1 ano' },
+  { value: 2, label: '2 anos' },
+  { value: 3, label: '3 anos' },
+  { value: 4, label: '4 anos' },
+  { value: 5, label: '5 anos' },
+  { value: 6, label: '6 anos' },
+  { value: 7, label: '7 anos' },
+  { value: 8, label: '8 anos' },
+  { value: 9, label: '9 anos' },
+  { value: 10, label: '10 anos' },
+  { value: 11, label: '11 anos' },
+  { value: 12, label: '12 anos' },
+];
+
 export default function CuidotecaModal({ isOpen, onClose, cuidoteca }: CuidotecaModalProps) {
   const [formData, setFormData] = useState({
     name: cuidoteca?.name || '',
     hours: cuidoteca?.hours || '',
     days: cuidoteca?.days || [],
     maxCapacity: cuidoteca?.maxCapacity || 20,
+    minAge: cuidoteca?.minAge || 0,
+    maxAge: cuidoteca?.maxAge || 12,
   });
   const [openingHour, setOpeningHour] = useState(cuidoteca?.hours?.split('-')[0] || '');
   const [closingHour, setClosingHour] = useState(cuidoteca?.hours?.split('-')[1] || '');
@@ -94,6 +112,8 @@ export default function CuidotecaModal({ isOpen, onClose, cuidoteca }: Cuidoteca
       hours: '',
       days: [],
       maxCapacity: 20,
+      minAge: 0,
+      maxAge: 12,
     });
   };
 
@@ -104,6 +124,15 @@ export default function CuidotecaModal({ isOpen, onClose, cuidoteca }: Cuidoteca
       toast({
         title: "Campos obrigatórios",
         description: "Preencha nome, horários e pelo menos um dia.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (formData.minAge > formData.maxAge) {
+      toast({
+        title: "Faixa etária inválida",
+        description: "A idade mínima não pode ser maior que a idade máxima.",
         variant: "destructive",
       });
       return;
@@ -219,6 +248,39 @@ export default function CuidotecaModal({ isOpen, onClose, cuidoteca }: Cuidoteca
               min="1"
               max="50"
             />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Idade Mínima *</Label>
+              <Select value={formData.minAge.toString()} onValueChange={(value) => setFormData(prev => ({ ...prev, minAge: parseInt(value) }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  {AGE_OPTIONS.map((age) => (
+                    <SelectItem key={age.value} value={age.value.toString()}>
+                      {age.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Idade Máxima *</Label>
+              <Select value={formData.maxAge.toString()} onValueChange={(value) => setFormData(prev => ({ ...prev, maxAge: parseInt(value) }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  {AGE_OPTIONS.map((age) => (
+                    <SelectItem key={age.value} value={age.value.toString()}>
+                      {age.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
 

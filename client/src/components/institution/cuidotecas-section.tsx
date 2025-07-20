@@ -297,6 +297,10 @@ export default function CuidotecasSection({ institutionId, user }: CuidotecasSec
                         <Users className="h-4 w-4 mr-2" />
                         <span>Máx: {cuidoteca.maxCapacity} crianças</span>
                       </div>
+                      <div className="flex items-center">
+                        <span className="h-4 w-4 mr-2 text-xs">👶</span>
+                        <span>{cuidoteca.minAge || 0}-{cuidoteca.maxAge || 12} anos</span>
+                      </div>
                     </div>
 
                     {cuidoteca.assignedCaretakers?.length > 0 && (
@@ -340,6 +344,9 @@ export default function CuidotecasSection({ institutionId, user }: CuidotecasSec
               </p>
               <p className="text-sm text-muted-foreground">
                 Horário: {selectedCuidoteca?.hours}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Idade aceita: {selectedCuidoteca?.minAge || 0}-{selectedCuidoteca?.maxAge || 12} anos
               </p>
             </div>
 
