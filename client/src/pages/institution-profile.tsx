@@ -7,7 +7,7 @@ import { useParams, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Building, Users, GraduationCap, ArrowLeft, Mail, Phone, MapPin, UserCheck } from "lucide-react";
 import CuidotecasSection from "@/components/institution/cuidotecas-section";
 
@@ -27,6 +27,7 @@ interface ConnectedUser {
   course?: string;
   semester?: string;
   universityId?: string;
+  profilePicture?: string;
 }
 
 interface Connection {
@@ -302,6 +303,12 @@ export default function InstitutionProfile() {
                     <CardContent className="p-4">
                       <div className="flex items-center space-x-3">
                         <Avatar>
+                          {connectedUser.profilePicture && (
+                            <AvatarImage 
+                              src={connectedUser.profilePicture} 
+                              alt={connectedUser.name}
+                            />
+                          )}
                           <AvatarFallback>
                             {connectedUser.name.split(' ').map(n => n[0]).join('').toUpperCase()}
                           </AvatarFallback>
@@ -357,6 +364,12 @@ export default function InstitutionProfile() {
                     <CardContent className="p-4">
                       <div className="flex items-center space-x-3">
                         <Avatar>
+                          {connectedUser.profilePicture && (
+                            <AvatarImage 
+                              src={connectedUser.profilePicture} 
+                              alt={connectedUser.name}
+                            />
+                          )}
                           <AvatarFallback>
                             {connectedUser.name.split(' ').map(n => n[0]).join('').toUpperCase()}
                           </AvatarFallback>
