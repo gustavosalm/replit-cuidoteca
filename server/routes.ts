@@ -344,6 +344,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get current user's connected users for messaging
+  app.get('/api/users/me/connected-users', authenticateToken, async (req, res) => {
+    try {
+      const currentUserId = req.user.id;
+      const connectedUsers = await storage.getAcceptedUserConnections(currentUserId);
+      res.json(connectedUsers);
+    } catch (error) {
+      console.error('Get connected users error:', error);
+      res.status(500).json({ message: 'Failed to get connected users' });
+    }
+  });
+
   // Check if users are connected
   app.get('/api/users/:id/connection-status', authenticateToken, async (req, res) => {
     try {

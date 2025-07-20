@@ -34,6 +34,12 @@ export default function Messages() {
     enabled: !!user,
   });
 
+  // Get user's connected users for potential conversations
+  const { data: connectedUsers = [] } = useQuery({
+    queryKey: ["/api/users/me/connected-users"],
+    enabled: !!user,
+  });
+
   // Get messages with selected user
   const { data: messages = [] } = useQuery<Message[]>({
     queryKey: ["/api/messages", selectedUserId],
@@ -83,7 +89,7 @@ export default function Messages() {
 
   const selectedConversation = conversations.find(
     (conv: any) => conv.otherUserId === selectedUserId
-  ) || (selectedUserInfo ? {
+  ) || connectedUsers.find((user: any) => user.id === selectedUserId) || (selectedUserInfo ? {
     otherUserId: selectedUserInfo.id,
     otherUserName: selectedUserInfo.name,
     otherUserProfilePicture: selectedUserInfo.profilePicture,
@@ -104,52 +110,69 @@ export default function Messages() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[600px]">
-        {/* Conversations List */}
+        {/* Connected Users / Conversations List */}
         <Card className="lg:col-span-1">
           <CardHeader>
-            <CardTitle>Conversas</CardTitle>
+            <CardTitle>Conexões</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             <ScrollArea className="h-[500px]">
-              {conversations.length === 0 ? (
+              {connectedUsers.length === 0 ? (
                 <div className="p-4 text-center text-muted-foreground">
-                  Nenhuma conversa ainda
+                  <User className="w-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p>Nenhuma conexão ainda</p>
+                  <p className="text-xs">Conecte-se com outros usuários para começar a conversar</p>
                 </div>
               ) : (
-                conversations.map((conversation: any) => (
-                  <div
-                    key={conversation.otherUserId}
-                    className={`p-4 cursor-pointer hover:bg-muted/50 border-b ${
-                      selectedUserId === conversation.otherUserId
-                        ? "bg-muted"
-                        : ""
-                    }`}
-                    onClick={() => setSelectedUserId(conversation.otherUserId)}
-                  >
-                    <div className="flex items-center space-x-3">
-                      <Avatar className="w-10 h-10">
-                        {conversation.otherUserProfilePicture ? (
-                          <AvatarImage src={conversation.otherUserProfilePicture} />
-                        ) : (
-                          <AvatarFallback>
-                            <User className="w-4 h-4" />
-                          </AvatarFallback>
-                        )}
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-sm truncate">
-                          {conversation.otherUserName}
-                        </p>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {conversation.lastMessage}
-                        </p>
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {format(new Date(conversation.lastMessageDate), "HH:mm")}
+                connectedUsers.map((connectedUser: any) => {
+                  // Check if there's an existing conversation with this user
+                  const existingConversation = conversations.find(
+                    (conv: any) => conv.otherUserId === connectedUser.id
+                  );
+                  
+                  return (
+                    <div
+                      key={connectedUser.id}
+                      className={`p-4 cursor-pointer hover:bg-muted/50 border-b ${
+                        selectedUserId === connectedUser.id
+                          ? "bg-muted"
+                          : ""
+                      }`}
+                      onClick={() => setSelectedUserId(connectedUser.id)}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <Avatar className="w-10 h-10">
+                          {connectedUser.profilePicture ? (
+                            <AvatarImage src={connectedUser.profilePicture} />
+                          ) : (
+                            <AvatarFallback>
+                              {connectedUser.name.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
+                            </AvatarFallback>
+                          )}
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-sm truncate">
+                            {connectedUser.name}
+                          </p>
+                          {existingConversation ? (
+                            <>
+                              <p className="text-xs text-muted-foreground truncate">
+                                {existingConversation.lastMessage}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {format(new Date(existingConversation.lastMessageDate), "HH:mm")}
+                              </p>
+                            </>
+                          ) : (
+                            <p className="text-xs text-muted-foreground">
+                              Clique para conversar
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </ScrollArea>
           </CardContent>
@@ -162,15 +185,18 @@ export default function Messages() {
               <CardHeader>
                 <CardTitle className="flex items-center space-x-3">
                   <Avatar className="w-8 h-8">
-                    {selectedConversation?.otherUserProfilePicture ? (
-                      <AvatarImage src={selectedConversation.otherUserProfilePicture} />
+                    {(selectedConversation?.otherUserProfilePicture || selectedConversation?.profilePicture) ? (
+                      <AvatarImage src={selectedConversation.otherUserProfilePicture || selectedConversation.profilePicture} />
                     ) : (
                       <AvatarFallback>
-                        <User className="w-4 h-4" />
+                        {selectedConversation?.name ? 
+                          selectedConversation.name.split(' ').map((n: string) => n[0]).join('').toUpperCase() :
+                          <User className="w-4 h-4" />
+                        }
                       </AvatarFallback>
                     )}
                   </Avatar>
-                  <span>{selectedConversation?.otherUserName}</span>
+                  <span>{selectedConversation?.otherUserName || selectedConversation?.name}</span>
                 </CardTitle>
               </CardHeader>
               <Separator />
