@@ -3,7 +3,8 @@ import {
   children, 
   events,
   eventParticipations, 
-  posts, 
+  posts,
+  postVotes,
   notifications,
   universityConnections,
   userConnections,
@@ -21,6 +22,8 @@ import {
   type InsertEventParticipation,
   type Post,
   type InsertPost,
+  type PostVote,
+  type InsertPostVote,
   type Notification,
   type InsertNotification,
   type UniversityConnection,
@@ -81,9 +84,16 @@ export interface IStorage {
   getPost(id: number): Promise<Post | undefined>;
   getAllPosts(): Promise<PostWithAuthor[]>;
   getInstitutionPosts(institutionId: number): Promise<PostWithAuthor[]>;
+  getConnectedUsersPostsForInstitution(institutionId: number): Promise<PostWithAuthor[]>;
   createPost(post: InsertPost): Promise<Post>;
   updatePost(id: number, post: Partial<InsertPost>): Promise<Post>;
   deletePost(id: number): Promise<void>;
+  
+  // Post voting operations
+  voteOnPost(vote: InsertPostVote): Promise<PostVote>;
+  getUserVoteOnPost(postId: number, userId: number): Promise<PostVote | undefined>;
+  removeVoteFromPost(postId: number, userId: number): Promise<void>;
+  updatePostVoteCounts(postId: number): Promise<void>;
   
   // Notification operations
   getNotification(id: number): Promise<Notification | undefined>;
@@ -392,6 +402,79 @@ export class DatabaseStorage implements IStorage {
 
   async deletePost(id: number): Promise<void> {
     await db.delete(posts).where(eq(posts.id, id));
+  }
+
+  async getConnectedUsersPostsForInstitution(institutionId: number): Promise<PostWithAuthor[]> {
+    // Get all users connected to this institution
+    const connectedUsers = await db.query.universityConnections.findMany({
+      where: eq(universityConnections.institutionId, institutionId),
+      with: {
+        user: true,
+      },
+    });
+
+    if (connectedUsers.length === 0) {
+      return [];
+    }
+
+    const userIds = connectedUsers.map(conn => conn.userId);
+
+    // Get all posts from connected users
+    return await db.query.posts.findMany({
+      where: and(
+        eq(posts.institutionId, institutionId),
+        // Posts where author is connected to this institution
+      ),
+      with: {
+        author: true,
+      },
+      orderBy: desc(posts.createdAt),
+    });
+  }
+
+  async voteOnPost(vote: InsertPostVote): Promise<PostVote> {
+    // First, remove any existing vote from this user on this post
+    await this.removeVoteFromPost(vote.postId, vote.userId);
+    
+    // Insert the new vote
+    const [newVote] = await db.insert(postVotes).values(vote).returning();
+    
+    // Update post vote counts
+    await this.updatePostVoteCounts(vote.postId);
+    
+    return newVote;
+  }
+
+  async getUserVoteOnPost(postId: number, userId: number): Promise<PostVote | undefined> {
+    const [vote] = await db.select().from(postVotes).where(
+      and(eq(postVotes.postId, postId), eq(postVotes.userId, userId))
+    );
+    return vote || undefined;
+  }
+
+  async removeVoteFromPost(postId: number, userId: number): Promise<void> {
+    await db.delete(postVotes).where(
+      and(eq(postVotes.postId, postId), eq(postVotes.userId, userId))
+    );
+  }
+
+  async updatePostVoteCounts(postId: number): Promise<void> {
+    // Count upvotes and downvotes
+    const upvoteCount = await db.select().from(postVotes).where(
+      and(eq(postVotes.postId, postId), eq(postVotes.voteType, 'upvote'))
+    );
+    
+    const downvoteCount = await db.select().from(postVotes).where(
+      and(eq(postVotes.postId, postId), eq(postVotes.voteType, 'downvote'))
+    );
+
+    // Update the post with new counts
+    await db.update(posts)
+      .set({
+        upvotes: upvoteCount.length,
+        downvotes: downvoteCount.length,
+      })
+      .where(eq(posts.id, postId));
   }
 
   async getNotification(id: number): Promise<Notification | undefined> {

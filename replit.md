@@ -116,6 +116,26 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### July 20, 2025 - Community Voting System & Institution Post Management
+- **Upvote/Downvote System**: Replaced simple likes with comprehensive voting functionality
+  - Added upvote and downvote buttons with green/red styling for clear visual distinction
+  - Implemented vote tracking table to prevent duplicate voting from same user
+  - Users can only vote once per post (upvote OR downvote, not both)
+  - Clicking same vote type removes the vote (toggle functionality)
+  - Updated post schema to track separate upvote and downvote counts
+- **Vote Notifications**: Added real-time notifications for post engagement
+  - Post authors receive notifications when users upvote or downvote their posts
+  - Notifications include voter's name for personalized engagement tracking
+  - No notifications sent when users vote on their own posts
+- **Institution Community Management**: Enhanced community access for institutions
+  - Institutions can now see all posts from users connected to them
+  - Regular users continue to see posts from their connected institutions
+  - Improved community feed logic for role-based post visibility
+- **Database Schema Updates**: Extended post and voting data structures
+  - Migrated existing likes column to upvotes for data preservation
+  - Added downvotes column and post_votes tracking table
+  - Implemented unique constraints to prevent duplicate voting
+
 ### July 20, 2025 - Enhanced Notification System with Links
 - **Notification Links**: Added clickable links to notifications for better user engagement
   - Cuidoteca creation notifications now include "Ver cuidotecas →" link to institutions page

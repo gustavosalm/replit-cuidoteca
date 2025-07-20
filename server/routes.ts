@@ -681,18 +681,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Posts routes
   app.get('/api/posts', authenticateToken, async (req, res) => {
     try {
-      // Get user's connected institutions
-      const userConnections = await storage.getUserConnections(req.user.id);
-      
-      if (userConnections.length === 0) {
-        return res.json([]);
-      }
-      
-      // Get posts from all connected institutions
-      const allPosts: any[] = [];
-      for (const connection of userConnections) {
-        const institutionPosts = await storage.getInstitutionPosts(connection.institutionId);
-        allPosts.push(...institutionPosts);
+      let allPosts: any[] = [];
+
+      if (req.user.role === 'institution') {
+        // Institutions see all posts from connected users
+        allPosts = await storage.getConnectedUsersPostsForInstitution(req.user.id);
+      } else {
+        // Regular users see posts from their connected institutions
+        const userConnections = await storage.getUserConnections(req.user.id);
+        
+        if (userConnections.length === 0) {
+          return res.json([]);
+        }
+        
+        // Get posts from all connected institutions
+        for (const connection of userConnections) {
+          const institutionPosts = await storage.getInstitutionPosts(connection.institutionId);
+          allPosts.push(...institutionPosts);
+        }
       }
       
       // Sort by creation date (newest first)
@@ -728,7 +734,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/posts/:id/like', authenticateToken, async (req, res) => {
+  // Vote on post (upvote)
+  app.put('/api/posts/:id/upvote', authenticateToken, async (req, res) => {
     try {
       const postId = parseInt(req.params.id);
       const post = await storage.getPost(postId);
@@ -736,18 +743,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!post) {
         return res.status(404).json({ message: 'Post not found' });
       }
+
+      // Check if user already voted on this post
+      const existingVote = await storage.getUserVoteOnPost(postId, req.user.id);
       
-      // Update likes count directly in the database
-      const [updatedPost] = await db
-        .update(posts)
-        .set({ likes: post.likes + 1 })
-        .where(eq(posts.id, postId))
-        .returning();
+      if (existingVote && existingVote.voteType === 'upvote') {
+        // User already upvoted, remove the vote
+        await storage.removeVoteFromPost(postId, req.user.id);
+        await storage.updatePostVoteCounts(postId);
+      } else {
+        // Create or update vote to upvote
+        await storage.voteOnPost({
+          postId,
+          userId: req.user.id,
+          voteType: 'upvote'
+        });
+
+        // Send notification to post author (if not voting on own post)
+        if (post.authorId !== req.user.id) {
+          await storage.createNotification({
+            userId: post.authorId,
+            message: `${req.user.name} deu upvote no seu post`,
+            type: 'vote'
+          });
+        }
+      }
       
+      const updatedPost = await storage.getPost(postId);
       res.json(updatedPost);
     } catch (error) {
-      console.error('Like post error:', error);
-      res.status(500).json({ message: 'Failed to like post' });
+      console.error('Upvote post error:', error);
+      res.status(500).json({ message: 'Failed to upvote post' });
+    }
+  });
+
+  // Vote on post (downvote)
+  app.put('/api/posts/:id/downvote', authenticateToken, async (req, res) => {
+    try {
+      const postId = parseInt(req.params.id);
+      const post = await storage.getPost(postId);
+      
+      if (!post) {
+        return res.status(404).json({ message: 'Post not found' });
+      }
+
+      // Check if user already voted on this post
+      const existingVote = await storage.getUserVoteOnPost(postId, req.user.id);
+      
+      if (existingVote && existingVote.voteType === 'downvote') {
+        // User already downvoted, remove the vote
+        await storage.removeVoteFromPost(postId, req.user.id);
+        await storage.updatePostVoteCounts(postId);
+      } else {
+        // Create or update vote to downvote
+        await storage.voteOnPost({
+          postId,
+          userId: req.user.id,
+          voteType: 'downvote'
+        });
+
+        // Send notification to post author (if not voting on own post)
+        if (post.authorId !== req.user.id) {
+          await storage.createNotification({
+            userId: post.authorId,
+            message: `${req.user.name} deu downvote no seu post`,
+            type: 'vote'
+          });
+        }
+      }
+      
+      const updatedPost = await storage.getPost(postId);
+      res.json(updatedPost);
+    } catch (error) {
+      console.error('Downvote post error:', error);
+      res.status(500).json({ message: 'Failed to downvote post' });
+    }
+  });
+
+  // Get user's vote on a specific post
+  app.get('/api/posts/:id/my-vote', authenticateToken, async (req, res) => {
+    try {
+      const postId = parseInt(req.params.id);
+      const vote = await storage.getUserVoteOnPost(postId, req.user.id);
+      res.json(vote || null);
+    } catch (error) {
+      console.error('Get user vote error:', error);
+      res.status(500).json({ message: 'Failed to get user vote' });
     }
   });
 

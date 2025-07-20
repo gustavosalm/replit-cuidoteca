@@ -6,7 +6,7 @@ import MobileNav from "@/components/layout/mobile-nav";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Heart, MessageCircle, User, Send } from "lucide-react";
+import { ChevronUp, ChevronDown, MessageCircle, User, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -55,9 +55,18 @@ export default function Community() {
     },
   });
 
-  const likeMutation = useMutation({
+  const upvoteMutation = useMutation({
     mutationFn: async (postId: number) => {
-      return await apiRequest("PUT", `/api/posts/${postId}/like`);
+      return await apiRequest("PUT", `/api/posts/${postId}/upvote`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
+    },
+  });
+
+  const downvoteMutation = useMutation({
+    mutationFn: async (postId: number) => {
+      return await apiRequest("PUT", `/api/posts/${postId}/downvote`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
@@ -207,15 +216,28 @@ export default function Community() {
                         {post.content}
                       </p>
                       <div className="flex items-center space-x-4">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => likeMutation.mutate(post.id)}
-                          disabled={likeMutation.isPending}
-                        >
-                          <Heart className="h-4 w-4 mr-1" />
-                          <span>{post.likes}</span>
-                        </Button>
+                        <div className="flex items-center space-x-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => upvoteMutation.mutate(post.id)}
+                            disabled={upvoteMutation.isPending || downvoteMutation.isPending}
+                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                          >
+                            <ChevronUp className="h-4 w-4" />
+                            <span className="ml-1">{post.upvotes || 0}</span>
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => downvoteMutation.mutate(post.id)}
+                            disabled={upvoteMutation.isPending || downvoteMutation.isPending}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <ChevronDown className="h-4 w-4" />
+                            <span className="ml-1">{post.downvotes || 0}</span>
+                          </Button>
+                        </div>
                         <Button variant="ghost" size="sm">
                           <MessageCircle className="h-4 w-4 mr-1" />
                           Responder

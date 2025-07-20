@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, pgEnum, unique } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -63,9 +63,20 @@ export const posts = pgTable("posts", {
   authorId: integer("author_id").references(() => users.id).notNull(),
   institutionId: integer("institution_id").references(() => users.id),
   content: text("content").notNull(),
-  likes: integer("likes").default(0).notNull(),
+  upvotes: integer("upvotes").default(0).notNull(),
+  downvotes: integer("downvotes").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+export const postVotes = pgTable("post_votes", {
+  id: serial("id").primaryKey(),
+  postId: integer("post_id").references(() => posts.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  voteType: text("vote_type").notNull(), // 'upvote' or 'downvote'
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  uniqueUserPost: unique().on(table.postId, table.userId),
+}));
 
 export const notifications = pgTable("notifications", {
   id: serial("id").primaryKey(),
@@ -316,7 +327,13 @@ export const insertEventParticipationSchema = createInsertSchema(eventParticipat
 
 export const insertPostSchema = createInsertSchema(posts).omit({
   id: true,
-  likes: true,
+  upvotes: true,
+  downvotes: true,
+  createdAt: true,
+});
+
+export const insertPostVoteSchema = createInsertSchema(postVotes).omit({
+  id: true,
   createdAt: true,
 });
 
@@ -372,6 +389,8 @@ export type EventParticipation = typeof eventParticipations.$inferSelect;
 export type InsertEventParticipation = z.infer<typeof insertEventParticipationSchema>;
 export type Post = typeof posts.$inferSelect;
 export type InsertPost = z.infer<typeof insertPostSchema>;
+export type PostVote = typeof postVotes.$inferSelect;
+export type InsertPostVote = z.infer<typeof insertPostVoteSchema>;
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 export type UniversityConnection = typeof universityConnections.$inferSelect;
