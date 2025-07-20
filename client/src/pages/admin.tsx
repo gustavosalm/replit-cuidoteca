@@ -11,7 +11,12 @@ export default function Admin() {
   const { user, isLoading } = useAuth();
   const [, setLocation] = useLocation();
 
-  const { data: stats } = useQuery({
+  const { data: stats } = useQuery<{
+    totalFamilies: number;
+    activeChildren: number;
+    waitingList: number;
+    todaySchedules: number;
+  }>({
     queryKey: ["/api/admin/stats"],
     enabled: user?.role === "coordinator",
   });

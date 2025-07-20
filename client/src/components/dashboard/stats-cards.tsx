@@ -3,15 +3,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { CalendarCheck, Baby, Users } from "lucide-react";
 
 export default function StatsCards() {
-  const { data: schedules } = useQuery({
+  const { data: schedules } = useQuery<any[]>({
     queryKey: ["/api/schedules"],
   });
 
-  const { data: children } = useQuery({
+  const { data: children } = useQuery<any[]>({
     queryKey: ["/api/children"],
   });
 
-  const { data: notifications } = useQuery({
+  const { data: notifications } = useQuery<any[]>({
     queryKey: ["/api/notifications"],
   });
 

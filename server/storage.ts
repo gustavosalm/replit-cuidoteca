@@ -940,14 +940,14 @@ export class DatabaseStorage implements IStorage {
       .from(children);
 
     const [schedulesCount] = await db
-      .select({ count: db.$count(schedules.id) })
-      .from(schedules)
-      .where(eq(schedules.status, "confirmed"));
+      .select({ count: db.$count(eventParticipations.id) })
+      .from(eventParticipations)
+      .where(eq(eventParticipations.status, "confirmed"));
 
     const [pendingCount] = await db
-      .select({ count: db.$count(schedules.id) })
-      .from(schedules)
-      .where(eq(schedules.status, "pending"));
+      .select({ count: db.$count(eventParticipations.id) })
+      .from(eventParticipations)
+      .where(eq(eventParticipations.status, "pending"));
 
     return {
       totalFamilies: familiesCount?.count || 0,

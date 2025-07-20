@@ -1,9 +1,32 @@
-import type { Express } from "express";
+import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { db } from "./db";
+import { posts } from "@shared/schema";
+import { eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { insertUserSchema, insertParentSchema, insertInstitutionSchema, insertCuidadorSchema, insertChildSchema, insertEventSchema, insertEventParticipationSchema, insertPostSchema, insertNotificationSchema } from "@shared/schema";
+
+// Extend Express Request interface to include user property
+declare global {
+  namespace Express {
+    interface Request {
+      user?: {
+        id: number;
+        email: string;
+        role: string;
+        name: string;
+        institutionName?: string;
+      };
+    }
+  }
+}
+
+// Type guard for authenticated requests
+function isAuthenticated(req: Express.Request): req is Express.Request & { user: NonNullable<Express.Request['user']> } {
+  return req.user !== undefined;
+}
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
@@ -16,11 +39,17 @@ const authenticateToken = (req: any, res: any, next: any) => {
     return res.status(401).json({ message: 'Access token required' });
   }
 
-  jwt.verify(token, JWT_SECRET, (err: any, user: any) => {
+  jwt.verify(token, JWT_SECRET, (err: any, decoded: any) => {
     if (err) {
       return res.status(403).json({ message: 'Invalid token' });
     }
-    req.user = user;
+    req.user = {
+      id: decoded.id,
+      email: decoded.email,
+      role: decoded.role,
+      name: decoded.name,
+      institutionName: decoded.institutionName,
+    };
     next();
   });
 };
@@ -64,7 +93,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const token = jwt.sign(
-        { id: user.id, email: user.email, role: user.role },
+        { 
+          id: user.id, 
+          email: user.email, 
+          role: user.role,
+          name: user.name,
+          institutionName: user.institutionName
+        },
         JWT_SECRET,
         { expiresIn: '24h' }
       );
@@ -94,7 +129,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const token = jwt.sign(
-        { id: user.id, email: user.email, role: user.role },
+        { 
+          id: user.id, 
+          email: user.email, 
+          role: user.role,
+          name: user.name,
+          institutionName: user.institutionName
+        },
         JWT_SECRET,
         { expiresIn: '24h' }
       );
@@ -529,9 +570,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Post not found' });
       }
       
-      const updatedPost = await storage.updatePost(postId, {
-        likes: post.likes + 1,
-      });
+      // Update likes count directly in the database
+      const [updatedPost] = await db
+        .update(posts)
+        .set({ likes: post.likes + 1 })
+        .where(eq(posts.id, postId))
+        .returning();
       
       res.json(updatedPost);
     } catch (error) {
