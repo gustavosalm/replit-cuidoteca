@@ -832,17 +832,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/posts', authenticateToken, async (req, res) => {
     try {
-      // Get user's connected institutions to post in the first one
-      const userConnections = await storage.getUserConnections(req.user.id);
+      let institutionId: number;
       
-      if (userConnections.length === 0) {
-        return res.status(400).json({ message: 'Conecte-se à sua instituição para começar a postar' });
+      if (req.user.role === 'institution') {
+        // Institutions post in their own community
+        institutionId = req.user.id;
+      } else {
+        // Get user's connected institutions to post in the first one
+        const userConnections = await storage.getUserConnections(req.user.id);
+        
+        if (userConnections.length === 0) {
+          return res.status(400).json({ message: 'Conecte-se à sua instituição para começar a postar' });
+        }
+        
+        institutionId = userConnections[0].institutionId;
       }
       
       const postData = insertPostSchema.parse({
         ...req.body,
         authorId: req.user.id,
-        institutionId: userConnections[0].institutionId, // Post to the first connected institution
+        institutionId: institutionId,
       });
       
       const post = await storage.createPost(postData);

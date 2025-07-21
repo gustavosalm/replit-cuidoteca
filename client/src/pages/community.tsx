@@ -96,7 +96,8 @@ export default function Community() {
   });
 
   const handleCreatePost = () => {
-    if (!userConnections || userConnections.length === 0) {
+    // Institutions can always post in their own community
+    if (user?.role !== 'institution' && (!userConnections || userConnections.length === 0)) {
       toast({
         title: "Conecte-se à sua instituição",
         description: "Conecte-se à sua instituição para começar a postar",
@@ -149,7 +150,7 @@ export default function Community() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {(!userConnections || userConnections.length === 0) ? (
+              {(user?.role !== 'institution' && (!userConnections || userConnections.length === 0)) ? (
                 <div className="text-center p-6">
                   <MessageCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <p className="text-muted-foreground">
@@ -206,7 +207,7 @@ export default function Community() {
             <Card>
               <CardContent className="p-8 text-center">
                 <MessageCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                {(!userConnections || userConnections.length === 0) ? (
+                {(user?.role !== 'institution' && (!userConnections || userConnections.length === 0)) ? (
                   <div>
                     <p className="text-muted-foreground mb-4">
                       Conecte-se à sua instituição para ver as mensagens da comunidade
