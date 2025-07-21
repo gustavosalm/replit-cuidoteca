@@ -348,7 +348,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/users/me/connected-users', authenticateToken, async (req, res) => {
     try {
       const currentUserId = req.user.id;
-      const connectedUsers = await storage.getAcceptedUserConnections(currentUserId);
+      let connectedUsers = [];
+      
+      if (req.user.role === 'institution') {
+        // For institutions, get all users connected to this institution
+        connectedUsers = await storage.getInstitutionConnectedUsers(currentUserId);
+      } else {
+        // For regular users, get their user-to-user connections
+        connectedUsers = await storage.getAcceptedUserConnections(currentUserId);
+      }
+      
       res.json(connectedUsers);
     } catch (error) {
       console.error('Get connected users error:', error);
