@@ -826,8 +826,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let allPosts: any[] = [];
 
       if (req.user.role === 'institution') {
-        // Institutions see all posts from connected users
-        allPosts = await storage.getConnectedUsersPostsForInstitution(req.user.id);
+        // Institutions see all posts from their institution (including their own posts and posts from connected users)
+        allPosts = await storage.getInstitutionPosts(req.user.id);
       } else {
         // Regular users see posts from their connected institutions
         const userConnections = await storage.getUserConnections(req.user.id);
