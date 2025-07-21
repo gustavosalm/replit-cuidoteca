@@ -65,6 +65,7 @@ export const posts = pgTable("posts", {
   content: text("content").notNull(),
   upvotes: integer("upvotes").default(0).notNull(),
   downvotes: integer("downvotes").default(0).notNull(),
+  flagged: boolean("flagged").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

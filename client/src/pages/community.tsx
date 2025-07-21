@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { ChevronUp, ChevronDown, MessageCircle, User, Send, Trash2 } from "lucide-react";
+import { ChevronUp, ChevronDown, MessageCircle, User, Send, Trash2, Flag } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -89,6 +89,27 @@ export default function Community() {
       const errorMessage = error?.response?.data?.message || "Não foi possível excluir o post";
       toast({
         title: "Erro ao excluir post",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const flagPostMutation = useMutation({
+    mutationFn: async (postId: number) => {
+      return await apiRequest("PUT", `/api/posts/${postId}/flag`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
+      toast({
+        title: "Post sinalizado",
+        description: "O status de sinalização do post foi alterado",
+      });
+    },
+    onError: (error: any) => {
+      const errorMessage = error?.response?.data?.message || "Não foi possível sinalizar o post";
+      toast({
+        title: "Erro ao sinalizar post",
         description: errorMessage,
         variant: "destructive",
       });
@@ -263,22 +284,42 @@ export default function Community() {
                             {formatTimeAgo(post.createdAt)}
                           </span>
                         </div>
-                        {user && post.authorId === user.id && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeletePost(post.id, post.content)}
-                            disabled={deletePostMutation.isPending}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
-                            title="Excluir post"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
+                        <div className="flex items-center space-x-1">
+                          {user && post.authorId === user.id && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeletePost(post.id, post.content)}
+                              disabled={deletePostMutation.isPending}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
+                              title="Excluir post"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                          {user && user.role === 'institution' && post.institutionId === user.id && post.authorId !== user.id && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => flagPostMutation.mutate(post.id)}
+                              disabled={flagPostMutation.isPending}
+                              className={`h-8 w-8 p-0 ${post.flagged ? 'text-orange-600 hover:text-orange-700 hover:bg-orange-50' : 'text-gray-600 hover:text-gray-700 hover:bg-gray-50'}`}
+                              title={post.flagged ? "Remover sinalização" : "Sinalizar post"}
+                            >
+                              <Flag className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
                       </div>
-                      <p className="text-foreground mb-4 whitespace-pre-wrap">
-                        {post.content}
-                      </p>
+                      {post.flagged && user?.role !== 'institution' ? (
+                        <p className="text-muted-foreground mb-4 italic">
+                          Este post foi sinalizado pelo admin
+                        </p>
+                      ) : (
+                        <p className="text-foreground mb-4 whitespace-pre-wrap">
+                          {post.content}
+                        </p>
+                      )}
                       <div className="flex items-center space-x-4">
                         <div className="flex items-center space-x-1">
                           <Button

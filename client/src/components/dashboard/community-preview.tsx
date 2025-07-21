@@ -5,11 +5,13 @@ import { Heart, MessageCircle, User } from "lucide-react";
 import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function CommunityPreview() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const { data: posts, isLoading } = useQuery({
     queryKey: ["/api/posts"],
@@ -102,9 +104,15 @@ export default function CommunityPreview() {
                         {formatTimeAgo(post.createdAt)}
                       </span>
                     </div>
-                    <p className="text-sm text-foreground mb-2">
-                      {post.content}
-                    </p>
+                    {post.flagged && user?.role !== 'institution' ? (
+                      <p className="text-sm text-muted-foreground mb-2 italic">
+                        Este post foi sinalizado pelo admin
+                      </p>
+                    ) : (
+                      <p className="text-sm text-foreground mb-2">
+                        {post.content}
+                      </p>
+                    )}
                     <div className="flex items-center space-x-4">
                       <Button
                         variant="ghost"
