@@ -57,6 +57,23 @@ export default function PublicProfile() {
     enabled: !!id && !!currentUser && currentUser.id !== parseInt(id!),
   });
 
+  // Check if current institution has this user as a connected user
+  const { data: connectedStudents = [] } = useQuery({
+    queryKey: ["/api/institutions", currentUser?.id, "connected-students"],
+    enabled: !!currentUser && currentUser.role === 'institution' && !!user,
+  });
+
+  const { data: connectedCuidadores = [] } = useQuery({
+    queryKey: ["/api/institutions", currentUser?.id, "connected-cuidadores"],
+    enabled: !!currentUser && currentUser.role === 'institution' && !!user,
+  });
+
+  // Check if the viewed user is connected to current institution
+  const isConnectedToInstitution = currentUser?.role === 'institution' && user && (
+    connectedStudents.some((student: any) => student.id === user.id) ||
+    connectedCuidadores.some((cuidador: any) => cuidador.id === user.id)
+  );
+
   // Check if current user can connect to this user
   const canConnect = currentUser && user && 
     currentUser.id !== user.id && 
@@ -337,20 +354,35 @@ export default function PublicProfile() {
         </Card>
 
         {/* Action Buttons */}
-        {canConnect && (
+        {(canConnect || isConnectedToInstitution) && (
           <Card>
             <CardContent className="p-4">
               <div className="flex gap-3">
-                <Button 
-                  onClick={() => sendMessageMutation.mutate()}
-                  className="flex-1"
-                >
-                  <MessageCircle className="h-4 w-4 mr-2" />
-                  Enviar Mensagem
-                </Button>
+                {/* Message button for institutions viewing connected users */}
+                {isConnectedToInstitution && (
+                  <Button
+                    onClick={() => sendMessageMutation.mutate()}
+                    disabled={sendMessageMutation.isPending}
+                    className="flex-1"
+                  >
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    Enviar Mensagem
+                  </Button>
+                )}
+
+                {/* Regular user messaging and connection buttons */}
+                {canConnect && !isConnectedToInstitution && (
+                  <Button 
+                    onClick={() => sendMessageMutation.mutate()}
+                    className="flex-1"
+                  >
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    Enviar Mensagem
+                  </Button>
+                )}
                 
-                {/* Connection Status Based Actions */}
-                {connectionStatus?.connected ? (
+                {/* Connection Status Based Actions - only for regular user connections */}
+                {canConnect && !isConnectedToInstitution && connectionStatus?.connected ? (
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button 
@@ -380,7 +412,7 @@ export default function PublicProfile() {
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
-                ) : connectionStatus?.incoming ? (
+                ) : canConnect && !isConnectedToInstitution && connectionStatus?.incoming ? (
                   <div className="flex gap-2 flex-1">
                     <Button 
                       variant="default"
@@ -399,7 +431,7 @@ export default function PublicProfile() {
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
-                ) : connectionStatus?.pending ? (
+                ) : canConnect && !isConnectedToInstitution && connectionStatus?.pending ? (
                   <>
                     <Button 
                       variant="outline"
@@ -438,7 +470,7 @@ export default function PublicProfile() {
                       </AlertDialogContent>
                     </AlertDialog>
                   </>
-                ) : (
+                ) : canConnect && !isConnectedToInstitution && (
                   <Button 
                     variant="outline"
                     onClick={() => connectMutation.mutate()}
