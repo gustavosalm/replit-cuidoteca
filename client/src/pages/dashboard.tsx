@@ -89,10 +89,13 @@ export default function Dashboard() {
           </>
         )}
         {user.role === 'cuidador' && (
-          <CuidadorEnrollmentsList />
+          <>
+            <CuidadorEnrollmentsList />
+            <Notifications />
+          </>
         )}
         <CommunityPreview />
-        {user.role !== 'parent' && <Notifications />}
+        {user.role === 'institution' && <Notifications />}
       </main>
 
       <MobileNav />
