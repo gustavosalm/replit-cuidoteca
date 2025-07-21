@@ -42,40 +42,45 @@ export default function PublicProfile() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: user, isLoading } = useQuery({
+  const { data: user, isLoading } = useQuery<PublicUser>({
     queryKey: ["/api/users/public", id],
     enabled: !!id,
   });
 
-  const { data: userConnections = [], isLoading: loadingConnections } = useQuery({
+  const { data: userConnections = [], isLoading: loadingConnections } = useQuery<ConnectedUser[]>({
     queryKey: ["/api/users", id, "connections"],
     enabled: !!id,
   });
 
-  const { data: connectionStatus } = useQuery({
+  const { data: connectionStatus } = useQuery<{
+    connected: boolean;
+    pending: boolean;
+    incoming: boolean;
+    connectionId?: number;
+  }>({
     queryKey: ["/api/users", id, "connection-status"],
     enabled: !!id && !!currentUser && currentUser.id !== parseInt(id!),
   });
 
   // Check if current institution has this user as a connected user
-  const { data: connectedStudents = [] } = useQuery({
+  const { data: connectedStudents = [] } = useQuery<PublicUser[]>({
     queryKey: ["/api/institutions", currentUser?.id, "connected-students"],
     enabled: !!currentUser && currentUser.role === 'institution' && !!user,
   });
 
-  const { data: connectedCuidadores = [] } = useQuery({
+  const { data: connectedCuidadores = [] } = useQuery<PublicUser[]>({
     queryKey: ["/api/institutions", currentUser?.id, "connected-cuidadores"],
     enabled: !!currentUser && currentUser.role === 'institution' && !!user,
   });
 
   // Check if the viewed user is connected to current institution
   const isConnectedToInstitution = currentUser?.role === 'institution' && user && (
-    connectedStudents.some((student: any) => student.id === user.id) ||
-    connectedCuidadores.some((cuidador: any) => cuidador.id === user.id)
+    connectedStudents.some((student) => student.id === user.id) ||
+    connectedCuidadores.some((cuidador) => cuidador.id === user.id)
   );
 
   // Get user's connected institutions
-  const { data: userInstitutions = [] } = useQuery({
+  const { data: userInstitutions = [] } = useQuery<PublicUser[]>({
     queryKey: ["/api/users", id, "institutions"],
     enabled: !!id && !!user,
   });
@@ -89,14 +94,14 @@ export default function PublicProfile() {
   // Send message mutation
   const sendMessageMutation = useMutation({
     mutationFn: async () => {
-      setLocation(`/messages?user=${user.id}`);
+      setLocation(`/messages?user=${user!.id}`);
     },
   });
 
   // Connect mutation - implement direct user connections
   const connectMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest("POST", `/api/users/${user.id}/connect`);
+      return await apiRequest("POST", `/api/users/${user!.id}/connect`);
     },
     onSuccess: () => {
       toast({
@@ -292,7 +297,7 @@ export default function PublicProfile() {
                   <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
                     Afiliação Institucional
                   </h3>
-                  {userInstitutions.map((institution: any) => (
+                  {userInstitutions.map((institution) => (
                     <div key={institution.id} className="flex items-center space-x-3 text-sm">
                       <Building className="h-4 w-4 text-muted-foreground" />
                       <span>
@@ -394,7 +399,7 @@ export default function PublicProfile() {
                 )}
 
                 {/* Regular user messaging and connection buttons */}
-                {canConnect && !isConnectedToInstitution && (
+                {canConnect && !isConnectedToInstitution && connectionStatus?.connected && (
                   <Button 
                     onClick={() => sendMessageMutation.mutate()}
                     className="flex-1"
@@ -427,7 +432,7 @@ export default function PublicProfile() {
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
                         <AlertDialogAction
-                          onClick={() => removeConnectionMutation.mutate(connectionStatus.connectionId)}
+                          onClick={() => removeConnectionMutation.mutate(connectionStatus?.connectionId!)}
                           disabled={removeConnectionMutation.isPending}
                         >
                           {removeConnectionMutation.isPending ? "Removendo..." : "Remover"}
@@ -440,7 +445,7 @@ export default function PublicProfile() {
                     <Button 
                       variant="default"
                       className="flex-1"
-                      onClick={() => acceptConnectionMutation.mutate(connectionStatus.connectionId)}
+                      onClick={() => acceptConnectionMutation.mutate(connectionStatus?.connectionId!)}
                       disabled={acceptConnectionMutation.isPending}
                     >
                       <UserPlus className="h-4 w-4 mr-2" />
@@ -448,7 +453,7 @@ export default function PublicProfile() {
                     </Button>
                     <Button 
                       variant="outline"
-                      onClick={() => declineConnectionMutation.mutate(connectionStatus.connectionId)}
+                      onClick={() => declineConnectionMutation.mutate(connectionStatus?.connectionId!)}
                       disabled={declineConnectionMutation.isPending}
                     >
                       <X className="h-4 w-4" />
@@ -484,7 +489,7 @@ export default function PublicProfile() {
                         <AlertDialogFooter>
                           <AlertDialogCancel>Cancelar</AlertDialogCancel>
                           <AlertDialogAction
-                            onClick={() => cancelConnectionMutation.mutate(connectionStatus.connectionId)}
+                            onClick={() => cancelConnectionMutation.mutate(connectionStatus?.connectionId!)}
                             disabled={cancelConnectionMutation.isPending}
                           >
                             {cancelConnectionMutation.isPending ? "Cancelando..." : "Sim, cancelar"}
