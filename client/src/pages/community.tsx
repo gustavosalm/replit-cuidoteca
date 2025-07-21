@@ -21,19 +21,19 @@ export default function Community() {
   const [tempDescription, setTempDescription] = useState("");
 
   // Get user's connections to check if they're connected to any institution
-  const { data: userConnections } = useQuery({
+  const { data: userConnections = [] } = useQuery<any[]>({
     queryKey: ["/api/users/connections"],
     enabled: !!user,
   });
 
   // Get institution details - either the user's own institution or their first connected one
-  const institutionId = user?.role === 'institution' ? user.id : userConnections?.[0]?.institutionId;
-  const { data: institutionDetails } = useQuery({
+  const institutionId = user?.role === 'institution' ? user.id : userConnections[0]?.institutionId;
+  const { data: institutionDetails } = useQuery<any>({
     queryKey: ["/api/institutions", institutionId],
     enabled: !!institutionId && institutionId !== user?.id, // Don't fetch if user is the institution
   });
 
-  const { data: posts, isLoading } = useQuery({
+  const { data: posts = [], isLoading } = useQuery<any[]>({
     queryKey: ["/api/posts"],
   });
 
@@ -178,7 +178,7 @@ export default function Community() {
 
   const handleCreatePost = () => {
     // Institutions can always post in their own community
-    if (user?.role !== 'institution' && (!userConnections || userConnections.length === 0)) {
+    if (user?.role !== 'institution' && userConnections.length === 0) {
       toast({
         title: "Conecte-se à sua instituição",
         description: "Conecte-se à sua instituição para começar a postar",
@@ -269,8 +269,10 @@ export default function Community() {
                     </Button>
                   </div>
                 </div>
-              ) : user?.communityDescription ? (
-                <p className="text-muted-foreground mt-2">{user.communityDescription}</p>
+              ) : (user?.role === 'institution' ? user?.communityDescription : institutionDetails?.communityDescription) ? (
+                <p className="text-muted-foreground mt-2">
+                  {user?.role === 'institution' ? user.communityDescription : institutionDetails?.communityDescription}
+                </p>
               ) : (
                 user?.role === 'institution' && (
                   <p className="text-muted-foreground text-sm mt-2 italic">
@@ -280,7 +282,7 @@ export default function Community() {
               )}
             </CardHeader>
             <CardContent>
-              {(user?.role !== 'institution' && (!userConnections || userConnections.length === 0)) ? (
+              {(user?.role !== 'institution' && userConnections.length === 0) ? (
                 <div className="text-center p-6">
                   <MessageCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <p className="text-muted-foreground">
@@ -333,11 +335,11 @@ export default function Community() {
                 </Card>
               ))}
             </div>
-          ) : !posts?.length ? (
+          ) : !posts.length ? (
             <Card>
               <CardContent className="p-8 text-center">
                 <MessageCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                {(user?.role !== 'institution' && (!userConnections || userConnections.length === 0)) ? (
+                {(user?.role !== 'institution' && userConnections.length === 0) ? (
                   <div>
                     <p className="text-muted-foreground mb-4">
                       Conecte-se à sua instituição para ver as mensagens da comunidade
