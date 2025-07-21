@@ -117,6 +117,9 @@ export default function Messages() {
     otherUserProfilePicture: selectedUserInfo.profilePicture,
   } : null);
 
+  // Check if current user is still connected to the selected user
+  const isConnectedToSelectedUser = connectedUsers.some((user: any) => user.id === selectedUserId);
+
   if (!user) {
     return <div>Por favor, faça login para acessar suas mensagens.</div>;
   }
@@ -207,76 +210,130 @@ export default function Messages() {
           </CardHeader>
           <CardContent className="p-0">
             <ScrollArea className="h-[500px]">
-              {connectedUsers.length === 0 ? (
+              {/* Show all existing conversations, whether users are still connected or not */}
+              {conversations.length === 0 && connectedUsers.length === 0 ? (
                 <div className="p-4 text-center text-muted-foreground">
                   <User className="w-12 w-12 mx-auto mb-2 opacity-50" />
                   <p>Nenhuma conexão ainda</p>
                   <p className="text-xs">Conecte-se com outros usuários para começar a conversar</p>
                 </div>
               ) : (
-                connectedUsers.map((connectedUser: any) => {
-                  // Check if there's an existing conversation with this user
-                  const existingConversation = conversations.find(
-                    (conv: any) => conv.otherUserId === connectedUser.id
-                  );
+                <>
+                  {/* Show existing conversations */}
+                  {conversations.map((conversation: any) => {
+                    const isStillConnected = connectedUsers.some((user: any) => user.id === conversation.otherUserId);
+                    
+                    return (
+                      <div
+                        key={`conversation-${conversation.otherUserId}`}
+                        className={`p-4 cursor-pointer hover:bg-muted/50 border-b ${
+                          selectedUserId === conversation.otherUserId ? "bg-muted" : ""
+                        } ${!isStillConnected ? "opacity-75" : ""}`}
+                        onClick={() => setSelectedUserId(conversation.otherUserId)}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <Avatar 
+                            className="w-10 h-10 cursor-pointer hover:ring-2 hover:ring-primary/20 transition-all"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setLocation(`/profile/${conversation.otherUserId}`);
+                            }}
+                            title="Ver perfil"
+                          >
+                            {conversation.otherUserProfilePicture ? (
+                              <AvatarImage src={conversation.otherUserProfilePicture} />
+                            ) : (
+                              <AvatarFallback>
+                                {conversation.otherUserName.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
+                              </AvatarFallback>
+                            )}
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p 
+                                className="font-semibold text-sm truncate hover:text-primary cursor-pointer transition-colors"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setLocation(`/profile/${conversation.otherUserId}`);
+                                }}
+                                title="Ver perfil"
+                              >
+                                {conversation.otherUserName}
+                              </p>
+                              {!isStillConnected && (
+                                <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
+                                  Desconectado
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {conversation.lastMessage}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {format(new Date(conversation.lastMessageDate), "HH:mm")}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                   
-                  return (
-                    <div
-                      key={connectedUser.id}
-                      className={`p-4 cursor-pointer hover:bg-muted/50 border-b ${
-                        selectedUserId === connectedUser.id
-                          ? "bg-muted"
-                          : ""
-                      }`}
-                      onClick={() => setSelectedUserId(connectedUser.id)}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <Avatar 
-                          className="w-10 h-10 cursor-pointer hover:ring-2 hover:ring-primary/20 transition-all"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setLocation(`/profile/${connectedUser.id}`);
-                          }}
-                          title="Ver perfil"
-                        >
-                          {connectedUser.profilePicture ? (
-                            <AvatarImage src={connectedUser.profilePicture} />
-                          ) : (
-                            <AvatarFallback>
-                              {connectedUser.name.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
-                            </AvatarFallback>
-                          )}
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <p 
-                            className="font-semibold text-sm truncate hover:text-primary cursor-pointer transition-colors"
+                  {/* Show connected users who don't have conversations yet */}
+                  {connectedUsers.map((connectedUser: any) => {
+                    // Skip if there's already a conversation with this user
+                    const hasExistingConversation = conversations.some(
+                      (conv: any) => conv.otherUserId === connectedUser.id
+                    );
+                    
+                    if (hasExistingConversation) return null;
+                    
+                    return (
+                      <div
+                        key={connectedUser.id}
+                        className={`p-4 cursor-pointer hover:bg-muted/50 border-b ${
+                          selectedUserId === connectedUser.id
+                            ? "bg-muted"
+                            : ""
+                        }`}
+                        onClick={() => setSelectedUserId(connectedUser.id)}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <Avatar 
+                            className="w-10 h-10 cursor-pointer hover:ring-2 hover:ring-primary/20 transition-all"
                             onClick={(e) => {
                               e.stopPropagation();
                               setLocation(`/profile/${connectedUser.id}`);
                             }}
                             title="Ver perfil"
                           >
-                            {connectedUser.name}
-                          </p>
-                          {existingConversation ? (
-                            <>
-                              <p className="text-xs text-muted-foreground truncate">
-                                {existingConversation.lastMessage}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {format(new Date(existingConversation.lastMessageDate), "HH:mm")}
-                              </p>
-                            </>
-                          ) : (
+                            {connectedUser.profilePicture ? (
+                              <AvatarImage src={connectedUser.profilePicture} />
+                            ) : (
+                              <AvatarFallback>
+                                {connectedUser.name.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
+                              </AvatarFallback>
+                            )}
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <p 
+                              className="font-semibold text-sm truncate hover:text-primary cursor-pointer transition-colors"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setLocation(`/profile/${connectedUser.id}`);
+                              }}
+                              title="Ver perfil"
+                            >
+                              {connectedUser.name}
+                            </p>
                             <p className="text-xs text-muted-foreground">
                               Clique para conversar • Clique no nome/avatar para ver perfil
                             </p>
-                          )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })
+                    );
+                  })}
+                </>
               )}
             </ScrollArea>
           </CardContent>
@@ -348,20 +405,36 @@ export default function Messages() {
 
                 {/* Message Input */}
                 <div className="p-4 border-t">
-                  <form onSubmit={handleSendMessage} className="flex space-x-2">
-                    <Input
-                      value={messageText}
-                      onChange={(e) => setMessageText(e.target.value)}
-                      placeholder="Digite sua mensagem..."
-                      className="flex-1"
-                    />
-                    <Button
-                      type="submit"
-                      disabled={!messageText.trim() || sendMessageMutation.isPending}
-                    >
-                      <Send className="w-4 h-4" />
-                    </Button>
-                  </form>
+                  {isConnectedToSelectedUser ? (
+                    <form onSubmit={handleSendMessage} className="flex space-x-2">
+                      <Input
+                        value={messageText}
+                        onChange={(e) => setMessageText(e.target.value)}
+                        placeholder="Digite sua mensagem..."
+                        className="flex-1"
+                      />
+                      <Button
+                        type="submit"
+                        disabled={!messageText.trim() || sendMessageMutation.isPending}
+                      >
+                        <Send className="w-4 h-4" />
+                      </Button>
+                    </form>
+                  ) : (
+                    <div className="text-center p-4 bg-muted/50 rounded-lg">
+                      <p className="text-sm text-muted-foreground mb-2">
+                        Você precisa estar conectado a este usuário para enviar mensagens
+                      </p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setLocation(`/profile/${selectedUserId}`)}
+                      >
+                        <User className="w-4 h-4 mr-2" />
+                        Conectar-se primeiro
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </>
