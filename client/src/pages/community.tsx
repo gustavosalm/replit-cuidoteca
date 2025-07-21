@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { ChevronUp, ChevronDown, MessageCircle, User, Send, Trash2, Flag, Edit2, Check, X } from "lucide-react";
+import { ChevronUp, ChevronDown, MessageCircle, User, Send, Trash2, Flag, Edit2, Check, X, Pin, PinOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Input } from "@/components/ui/input";
@@ -135,6 +135,27 @@ export default function Community() {
       const errorMessage = error?.response?.data?.message || "Não foi possível atualizar a descrição";
       toast({
         title: "Erro ao atualizar descrição",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const pinPostMutation = useMutation({
+    mutationFn: async (postId: number) => {
+      return await apiRequest("PUT", `/api/posts/${postId}/pin`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
+      toast({
+        title: "Post fixado",
+        description: "O status de fixação do post foi alterado",
+      });
+    },
+    onError: (error: any) => {
+      const errorMessage = error?.response?.data?.message || "Não foi possível fixar o post";
+      toast({
+        title: "Erro ao fixar post",
         description: errorMessage,
         variant: "destructive",
       });
@@ -368,11 +389,29 @@ export default function Community() {
                               Admin
                             </Badge>
                           )}
+                          {post.pinned && (
+                            <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                              <Pin className="h-3 w-3 mr-1" />
+                              Fixado
+                            </Badge>
+                          )}
                           <span className="text-sm text-muted-foreground">
                             {formatTimeAgo(post.createdAt)}
                           </span>
                         </div>
                         <div className="flex items-center space-x-1">
+                          {user && user.role === 'institution' && post.institutionId === user.id && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => pinPostMutation.mutate(post.id)}
+                              disabled={pinPostMutation.isPending}
+                              className={`h-8 w-8 p-0 ${post.pinned ? 'text-blue-600 hover:text-blue-700 hover:bg-blue-50' : 'text-gray-600 hover:text-gray-700 hover:bg-gray-50'}`}
+                              title={post.pinned ? "Desafixar post" : "Fixar post"}
+                            >
+                              {post.pinned ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
+                            </Button>
+                          )}
                           {user && post.authorId === user.id && (
                             <Button
                               variant="ghost"

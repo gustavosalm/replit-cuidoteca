@@ -994,6 +994,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Pin/unpin a post (only institution can pin posts in their community)
+  app.put('/api/posts/:id/pin', authenticateToken, async (req, res) => {
+    try {
+      const postId = parseInt(req.params.id);
+      const post = await storage.getPost(postId);
+      
+      if (!post) {
+        return res.status(404).json({ message: 'Post not found' });
+      }
+      
+      // Only institutions can pin posts in their community
+      if (req.user.role !== 'institution' || post.institutionId !== req.user.id) {
+        return res.status(403).json({ message: 'Only the institution admin can pin posts in their community' });
+      }
+      
+      // Toggle pin status
+      const newPinnedStatus = !post.pinned;
+      await storage.updatePost(postId, { pinned: newPinnedStatus });
+      
+      const updatedPost = await storage.getPost(postId);
+      res.json(updatedPost);
+    } catch (error) {
+      console.error('Pin post error:', error);
+      res.status(500).json({ message: 'Failed to pin post' });
+    }
+  });
+
   // Flag/unflag a post (only institution admin of the community can flag)
   app.put('/api/posts/:id/flag', authenticateToken, async (req, res) => {
     try {
