@@ -6,6 +6,7 @@ import MobileNav from "@/components/layout/mobile-nav";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import { ChevronUp, ChevronDown, MessageCircle, User, Send, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -252,6 +253,11 @@ export default function Community() {
                           >
                             {post.author?.name}
                           </button>
+                          {post.author?.role === 'institution' && (
+                            <Badge variant="secondary" className="text-xs">
+                              Admin
+                            </Badge>
+                          )}
                           <span className="text-sm text-muted-foreground">
                             {formatTimeAgo(post.createdAt)}
                           </span>
