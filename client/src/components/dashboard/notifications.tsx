@@ -25,6 +25,26 @@ export default function Notifications() {
     },
   });
 
+  const markAllAsReadMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("PUT", "/api/notifications/mark-all-read");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
+      toast({
+        title: "Sucesso",
+        description: "Todas as notificações foram marcadas como lidas.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Não foi possível marcar todas as notificações como lidas.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const acceptConnectionMutation = useMutation({
     mutationFn: async (connectionRequestId: number) => {
       await apiRequest("PUT", `/api/connection-requests/${connectionRequestId}/accept`);
@@ -101,7 +121,20 @@ export default function Notifications() {
     <section className="mb-8" data-section="notifications">
       <Card>
         <CardHeader>
-          <CardTitle>Notificações</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>Notificações</CardTitle>
+            {notifications && notifications.length > 0 && notifications.some((n: any) => !n.read) && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => markAllAsReadMutation.mutate()}
+                disabled={markAllAsReadMutation.isPending}
+              >
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Marcar todas como lidas
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           {!notifications?.length ? (

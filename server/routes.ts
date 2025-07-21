@@ -678,8 +678,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check if user has access to this event
-      const hasAccess = req.user.role === 'institution' || 
-        await storage.isUserConnectedToInstitution(req.user.id, event.institutionId);
+      let hasAccess = req.user.role === 'institution';
+      
+      if (!hasAccess) {
+        // Check if user is connected to the institution that created this event
+        const userConnections = await storage.getUserConnections(req.user.id);
+        hasAccess = userConnections.some(conn => conn.institutionId === event.institutionId);
+      }
       
       if (!hasAccess) {
         return res.status(403).json({ message: 'No access to this event' });
@@ -1173,6 +1178,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Mark notification as read error:', error);
       res.status(500).json({ message: 'Failed to mark notification as read' });
+    }
+  });
+
+  app.put('/api/notifications/mark-all-read', authenticateToken, async (req, res) => {
+    try {
+      await storage.markAllNotificationsAsRead(req.user.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error('Mark all notifications as read error:', error);
+      res.status(500).json({ message: 'Failed to mark all notifications as read' });
     }
   });
 

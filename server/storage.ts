@@ -583,6 +583,13 @@ export class DatabaseStorage implements IStorage {
       .where(eq(notifications.id, id));
   }
 
+  async markAllNotificationsAsRead(userId: number): Promise<void> {
+    await db
+      .update(notifications)
+      .set({ read: true })
+      .where(eq(notifications.userId, userId));
+  }
+
   async getInstitutions(): Promise<InstitutionWithConnections[]> {
     const institutions = await db.query.users.findMany({
       where: eq(users.role, "institution"),
