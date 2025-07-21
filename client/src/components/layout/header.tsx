@@ -2,7 +2,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Heart, Bell, User } from "lucide-react";
+import { Heart, Bell, User, LogOut } from "lucide-react";
 
 export default function Header() {
   const { user, logout } = useAuth();
@@ -109,8 +109,11 @@ export default function Header() {
               <span className="text-sm text-muted-foreground hidden sm:block">
                 {user?.name} ({user?.role})
               </span>
-              <Button variant="ghost" size="sm" onClick={handleLogout} title="Logout">
+              <Button variant="ghost" size="sm" onClick={() => setLocation("/profile")} title="Profile">
                 <User className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="sm" onClick={handleLogout} title="Logout">
+                <LogOut className="h-4 w-4" />
               </Button>
             </div>
           </div>
