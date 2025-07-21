@@ -990,6 +990,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const newFlaggedStatus = !post.flagged;
       await storage.updatePost(postId, { flagged: newFlaggedStatus });
       
+      // Send notification to post author when flagged (not when unflagged)
+      if (newFlaggedStatus && post.authorId !== req.user.id) {
+        try {
+          await storage.createNotification({
+            userId: post.authorId,
+            message: `Seu post foi sinalizado pelo admin de ${req.user.institutionName || req.user.name}`,
+            type: 'post_flagged',
+            postId: post.id
+          });
+        } catch (notificationError) {
+          console.error('Failed to send flag notification:', notificationError);
+          // Don't fail the flag operation if notification fails
+        }
+      }
+      
       const updatedPost = await storage.getPost(postId);
       res.json(updatedPost);
     } catch (error) {

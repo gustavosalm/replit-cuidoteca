@@ -93,10 +93,11 @@ export const notifications = pgTable("notifications", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
   message: text("message").notNull(),
-  type: text("type").default("general").notNull(), // general, connection_request, cuidoteca_created, event_created
+  type: text("type").default("general").notNull(), // general, connection_request, cuidoteca_created, event_created, post_flagged
   connectionRequestId: integer("connection_request_id").references(() => userConnections.id),
   cuidotecaId: integer("cuidoteca_id").references(() => cuidotecas.id),
   eventId: integer("event_id").references(() => events.id),
+  postId: integer("post_id").references(() => posts.id),
   read: boolean("read").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

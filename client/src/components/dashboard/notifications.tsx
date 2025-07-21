@@ -1,14 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Bell, Info, CheckCircle, X, UserPlus, UserCheck, UserX, Calendar, Users } from "lucide-react";
+import { Bell, Info, CheckCircle, X, UserPlus, UserCheck, UserX, Calendar, Users, Flag } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 
 export default function Notifications() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
 
   const { data: notifications, isLoading } = useQuery({
     queryKey: ["/api/notifications"],
@@ -128,6 +129,8 @@ export default function Notifications() {
                       <Users className="h-4 w-4 text-white" />
                     ) : notification.type === "event_created" ? (
                       <Calendar className="h-4 w-4 text-white" />
+                    ) : notification.type === "post_flagged" ? (
+                      <Flag className="h-4 w-4 text-white" />
                     ) : notification.message.includes("confirmado") ? (
                       <CheckCircle className="h-4 w-4 text-white" />
                     ) : (
@@ -149,6 +152,19 @@ export default function Notifications() {
                           <Link href="/events" className="text-primary hover:underline text-xs">
                             Ver evento →
                           </Link>
+                        </div>
+                      )}
+                      {notification.type === "post_flagged" && notification.postId && (
+                        <div className="mt-1">
+                          <button 
+                            onClick={() => {
+                              setLocation("/community");
+                              markAsReadMutation.mutate(notification.id);
+                            }}
+                            className="text-primary hover:underline text-xs cursor-pointer"
+                          >
+                            Ver post →
+                          </button>
                         </div>
                       )}
                     </div>
