@@ -401,7 +401,7 @@ export class DatabaseStorage implements IStorage {
       with: {
         author: true,
       },
-      orderBy: desc(posts.createdAt),
+      orderBy: [desc(posts.pinned), desc(posts.createdAt)],
     });
   }
 

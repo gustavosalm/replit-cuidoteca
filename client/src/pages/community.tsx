@@ -26,11 +26,11 @@ export default function Community() {
     enabled: !!user,
   });
 
-  // Get user's first connected institution details
-  const firstInstitutionId = userConnections?.[0]?.institutionId;
+  // Get institution details - either the user's own institution or their first connected one
+  const institutionId = user?.role === 'institution' ? user.id : userConnections?.[0]?.institutionId;
   const { data: institutionDetails } = useQuery({
-    queryKey: ["/api/institutions", firstInstitutionId],
-    enabled: !!firstInstitutionId,
+    queryKey: ["/api/institutions", institutionId],
+    enabled: !!institutionId && institutionId !== user?.id, // Don't fetch if user is the institution
   });
 
   const { data: posts, isLoading } = useQuery({
@@ -228,7 +228,7 @@ export default function Community() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-2xl">
-                  Comunidade {institutionDetails?.name || institutionDetails?.institutionName || "Cuidoteca"}
+                  Comunidade {user?.role === 'institution' ? user.name : (institutionDetails?.name || institutionDetails?.institutionName || "Cuidoteca")}
                 </CardTitle>
                 {user?.role === 'institution' && (
                   <Button

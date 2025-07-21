@@ -843,8 +843,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Sort by creation date (newest first)
-      allPosts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      // Sort by pinned status first, then by creation date (newest first)
+      allPosts.sort((a, b) => {
+        // First sort by pinned status (pinned posts come first)
+        if (a.pinned && !b.pinned) return -1;
+        if (!a.pinned && b.pinned) return 1;
+        
+        // Then sort by creation date (newest first)
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
       
       res.json(allPosts);
     } catch (error) {
