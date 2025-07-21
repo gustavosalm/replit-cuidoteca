@@ -116,6 +116,27 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### July 21, 2025 - Password Reset System Implementation & Events Visibility Fix
+- **Complete Password Reset System**: Implemented secure email-based password reset functionality
+  - Added `passwordResetTokens` database table with token validation and expiration
+  - Created `/api/auth/forgot-password` endpoint that generates secure reset tokens
+  - Created `/api/auth/reset-password` endpoint for password validation and updating
+  - Tokens expire after 1 hour and are marked as used after successful reset
+  - All error messages in Portuguese for consistent user experience
+  - Development logging shows reset links in console for testing
+- **Password Reset Backend Implementation**: Extended storage layer with token management
+  - Added `createPasswordResetToken`, `getPasswordResetToken`, `markPasswordResetTokenAsUsed` methods
+  - Added `getUserByEmail` and `updateUserPassword` methods for user management
+  - Proper password hashing using bcrypt for security
+- **Events System Verification**: Confirmed institution events properly show to connected users
+  - Tested and verified that users connected to institutions see institution events
+  - Events filtering works correctly based on university_connections table
+  - API correctly returns empty array for unconnected users and full event data for connected users
+- **System Architecture**: Enhanced authentication system with password recovery capabilities
+  - Password reset tokens stored securely with expiration and usage tracking
+  - Integration with existing JWT authentication system
+  - Maintains security best practices with token-based password recovery
+
 ### July 21, 2025 - UI Improvements and Connection System Enhancement
 - **Logout Flow Fix**: Fixed unwanted page refresh during logout process
   - Removed automatic `window.location.reload()` from logout function

@@ -94,7 +94,11 @@ export default function Login() {
                   Lembrar de mim
                 </Label>
               </div>
-              <Button variant="link" className="text-sm p-0 h-auto">
+              <Button 
+                variant="link" 
+                className="text-sm p-0 h-auto"
+                onClick={() => setLocation("/forgot-password")}
+              >
                 Esqueceu a senha?
               </Button>
             </div>

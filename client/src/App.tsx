@@ -7,6 +7,8 @@ import { AuthProvider } from "@/hooks/use-auth";
 import Dashboard from "@/pages/dashboard";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
+import ForgotPassword from "@/pages/forgot-password";
+import ResetPassword from "@/pages/reset-password";
 import Admin from "@/pages/admin";
 import Community from "@/pages/community";
 import Events from "@/pages/events";
@@ -27,6 +29,8 @@ function Router() {
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
+      <Route path="/forgot-password" component={ForgotPassword} />
+      <Route path="/reset-password" component={ResetPassword} />
       <Route path="/admin" component={Admin} />
       <Route path="/community" component={Community} />
       <Route path="/events" component={Events} />

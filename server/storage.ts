@@ -14,6 +14,7 @@ import {
   cuidadorEnrollments,
   messages,
   institutionDocuments,
+  passwordResetTokens,
   type User, 
   type InsertUser,
   type Child,
@@ -44,6 +45,8 @@ import {
   type InsertMessage,
   type InstitutionDocument,
   type InsertInstitutionDocument,
+  type PasswordResetToken,
+  type InsertPasswordResetToken,
   type UserWithChildren,
   type ChildWithEventParticipations,
   type PostWithAuthor,
@@ -1538,6 +1541,56 @@ export class DatabaseStorage implements IStorage {
 
   async deleteInstitutionDocument(id: number): Promise<void> {
     await db.delete(institutionDocuments).where(eq(institutionDocuments.id, id));
+  }
+
+  // Password reset token operations
+  async createPasswordResetToken(tokenData: InsertPasswordResetToken): Promise<PasswordResetToken> {
+    const [token] = await db
+      .insert(passwordResetTokens)
+      .values(tokenData)
+      .returning();
+    
+    return token;
+  }
+
+  async getPasswordResetToken(token: string): Promise<PasswordResetToken | undefined> {
+    const [resetToken] = await db
+      .select()
+      .from(passwordResetTokens)
+      .where(
+        and(
+          eq(passwordResetTokens.token, token),
+          eq(passwordResetTokens.used, false)
+        )
+      );
+    
+    return resetToken || undefined;
+  }
+
+  async markPasswordResetTokenAsUsed(id: number): Promise<void> {
+    await db
+      .update(passwordResetTokens)
+      .set({ used: true })
+      .where(eq(passwordResetTokens.id, id));
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, email));
+    
+    return user || undefined;
+  }
+
+  async updateUserPassword(id: number, hashedPassword: string): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({ password: hashedPassword })
+      .where(eq(users.id, id))
+      .returning();
+    
+    return user;
   }
 }
 

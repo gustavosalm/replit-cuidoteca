@@ -150,6 +150,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post('/api/auth/forgot-password', async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        // Don't reveal if email exists for security
+        return res.json({ message: 'Se o email existe, um link de redefinição foi enviado' });
+      }
+
+      // Generate a unique reset token
+      const { randomBytes } = await import('crypto');
+      const token = randomBytes(32).toString('hex');
+      
+      // Token expires in 1 hour
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+      
+      await storage.createPasswordResetToken({
+        userId: user.id,
+        token,
+        expiresAt
+      });
+
+      // In a real application, you would send an email here
+      // For development, we'll log the reset link
+      console.log(`Password reset link for ${email}: http://localhost:5000/reset-password?token=${token}`);
+      
+      res.json({ message: 'Se o email existe, um link de redefinição foi enviado' });
+    } catch (error) {
+      console.error('Forgot password error:', error);
+      res.status(500).json({ message: 'Erro interno do servidor' });
+    }
+  });
+
+  app.post('/api/auth/reset-password', async (req, res) => {
+    try {
+      const { token, newPassword } = req.body;
+      
+      if (!token || !newPassword) {
+        return res.status(400).json({ message: 'Token e nova senha são obrigatórios' });
+      }
+
+      if (newPassword.length < 3) {
+        return res.status(400).json({ message: 'A senha deve ter pelo menos 3 caracteres' });
+      }
+      
+      const resetToken = await storage.getPasswordResetToken(token);
+      if (!resetToken) {
+        return res.status(400).json({ message: 'Token inválido ou expirado' });
+      }
+
+      // Check if token has expired
+      if (new Date() > new Date(resetToken.expiresAt)) {
+        return res.status(400).json({ message: 'Token expirado' });
+      }
+      
+      // Hash the new password
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      
+      // Update the user's password
+      await storage.updateUserPassword(resetToken.userId, hashedPassword);
+      
+      // Mark token as used
+      await storage.markPasswordResetTokenAsUsed(resetToken.id);
+      
+      res.json({ message: 'Senha redefinida com sucesso' });
+    } catch (error) {
+      console.error('Reset password error:', error);
+      res.status(500).json({ message: 'Erro ao redefinir senha' });
+    }
+  });
+
   // User routes
   app.get('/api/users/me', authenticateToken, async (req, res) => {
     try {
