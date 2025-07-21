@@ -720,15 +720,15 @@ export class DatabaseStorage implements IStorage {
   async createUserConnection(userId: number, connectedUserId: number): Promise<void> {
     // Create bidirectional user connection for messaging
     await db.insert(userConnections).values({
-      userId,
-      connectedUserId,
+      requesterId: userId,
+      recipientId: connectedUserId,
       status: 'accepted'
     }).onConflictDoNothing();
     
     // Create reverse connection
     await db.insert(userConnections).values({
-      userId: connectedUserId,
-      connectedUserId: userId,
+      requesterId: connectedUserId,
+      recipientId: userId,
       status: 'accepted'
     }).onConflictDoNothing();
   }
@@ -739,8 +739,8 @@ export class DatabaseStorage implements IStorage {
       .delete(userConnections)
       .where(
         and(
-          eq(userConnections.userId, userId),
-          eq(userConnections.connectedUserId, connectedUserId)
+          eq(userConnections.requesterId, userId),
+          eq(userConnections.recipientId, connectedUserId)
         )
       );
     
@@ -748,8 +748,8 @@ export class DatabaseStorage implements IStorage {
       .delete(userConnections)
       .where(
         and(
-          eq(userConnections.userId, connectedUserId),
-          eq(userConnections.connectedUserId, userId)
+          eq(userConnections.requesterId, connectedUserId),
+          eq(userConnections.recipientId, userId)
         )
       );
   }
