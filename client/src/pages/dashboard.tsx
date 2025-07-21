@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { useEffect } from "react";
 import Header from "@/components/layout/header";
 import MobileNav from "@/components/layout/mobile-nav";
-import StatsCards from "@/components/dashboard/stats-cards";
+
 
 import ChildrenList from "@/components/dashboard/children-list";
 import EventsList from "@/components/dashboard/events-list";
@@ -68,7 +68,7 @@ export default function Dashboard() {
               </div>
             </div>
             
-            <StatsCards />
+
           </div>
         </div>
 
