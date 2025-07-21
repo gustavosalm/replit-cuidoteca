@@ -1,12 +1,13 @@
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Heart, Bell, User } from "lucide-react";
 
 export default function Header() {
   const { user, logout } = useAuth();
   const [location, setLocation] = useLocation();
+  const queryClient = useQueryClient();
   
   // Get notifications to check for unread ones
   const { data: notifications = [] } = useQuery<any[]>({
@@ -18,6 +19,7 @@ export default function Header() {
 
   const handleLogout = () => {
     logout();
+    queryClient.clear(); // Clear all cached query data
     setLocation("/login");
   };
 

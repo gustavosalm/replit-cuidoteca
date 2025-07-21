@@ -116,6 +116,16 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### July 21, 2025 - UI Improvements and Logout Fix
+- **Logout Flow Fix**: Fixed unwanted page refresh during logout process
+  - Removed automatic `window.location.reload()` from logout function
+  - Added proper query cache clearing using `queryClient.clear()`
+  - Logout now smoothly transitions to login page without intermediate refresh
+- **Dashboard Cleanup**: Removed redundant "Criar primeira cuidoteca" button
+  - Simplified institution dashboard with single "Nova Cuidoteca" action button
+  - Added helpful hint text directing users to main action button
+  - Cleaner interface with better user experience
+
 ### July 21, 2025 - Enhanced Institution Bulk Messaging with Enrollment-Based Targeting
 - **Advanced Bulk Messaging**: Enhanced institution messaging system with enrollment-based targeting
   - Added support for messaging parents with children approved in institution's cuidotecas
