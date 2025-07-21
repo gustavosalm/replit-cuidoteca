@@ -53,7 +53,7 @@ export default function Login() {
             <Heart className="h-12 w-12 text-accent hover:scale-110 transition-transform" />
           </div>
           <CardTitle className="text-2xl">Bem-vinda à Cuidoteca</CardTitle>
-          <CardDescription>Conectando famílias e cuidadores</CardDescription>
+          <CardDescription>Conectando famílias, cuidadores e Universidade</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
