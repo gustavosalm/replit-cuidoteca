@@ -1,16 +1,12 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Heart, MessageCircle, User } from "lucide-react";
+import { ExternalLink, MessageCircle, User } from "lucide-react";
 import { useLocation } from "wouter";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 
 export default function CommunityPreview() {
   const [, setLocation] = useLocation();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
   const { user } = useAuth();
 
   const { data: posts, isLoading } = useQuery({
@@ -18,18 +14,9 @@ export default function CommunityPreview() {
     select: (data) => data.slice(0, 3), // Show only first 3 posts
   });
 
-  const likeMutation = useMutation({
-    mutationFn: async (postId: number) => {
-      await apiRequest("PUT", `/api/posts/${postId}/like`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
-      toast({
-        title: "Post curtido!",
-        description: "Obrigada pelo seu apoio",
-      });
-    },
-  });
+  const handleGoToPost = (postId: number) => {
+    setLocation(`/community?post=${postId}`);
+  };
 
   const formatTimeAgo = (date: string) => {
     const now = new Date();
@@ -113,23 +100,14 @@ export default function CommunityPreview() {
                         {post.content}
                       </p>
                     )}
-                    <div className="flex items-center space-x-4">
+                    <div className="flex items-center justify-end">
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => likeMutation.mutate(post.id)}
-                        disabled={likeMutation.isPending}
+                        onClick={() => handleGoToPost(post.id)}
                       >
-                        <Heart className="h-4 w-4 mr-1" />
-                        <span>{post.likes}</span>
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setLocation("/community")}
-                      >
-                        <MessageCircle className="h-4 w-4 mr-1" />
-                        Responder
+                        <ExternalLink className="h-4 w-4 mr-1" />
+                        Ver post
                       </Button>
                     </div>
                   </div>
