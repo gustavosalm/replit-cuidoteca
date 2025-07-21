@@ -52,7 +52,7 @@ export default function Login() {
           <div className="flex justify-center mb-4 cursor-pointer" onClick={() => setLocation("/")}>
             <Heart className="h-12 w-12 text-accent hover:scale-110 transition-transform" />
           </div>
-          <CardTitle className="text-2xl">Bem-vinda à Cuidoteca</CardTitle>
+          <CardTitle className="text-2xl">Bem-vindos à Cuidoteca</CardTitle>
           <CardDescription>Conectando famílias, cuidadores e Universidade</CardDescription>
         </CardHeader>
         <CardContent>
