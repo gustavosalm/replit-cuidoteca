@@ -231,17 +231,17 @@ export default function Profile() {
   const getRoleDisplay = (role: string) => {
     switch (role) {
       case "parent":
-        return "Responsável";
+        return "RESPONSÁVEL";
       case "coordinator":
-        return "Coordenador(a)";
+        return "COORDENADOR(A)";
       case "cuidador":
-        return "Cuidador(a)";
+        return "CUIDADOR(A)";
       case "caregiver":
-        return "Cuidador(a)";
+        return "CUIDADOR(A)";
       case "institution":
-        return "Instituição";
+        return "INSTITUIÇÃO";
       default:
-        return role;
+        return role?.toUpperCase();
     }
   };
 

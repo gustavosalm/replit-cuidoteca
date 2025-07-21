@@ -80,7 +80,8 @@ export default function EventsList() {
               {Array.isArray(events) && events.map((event: any) => (
                 <div
                   key={event.id}
-                  className="flex items-center p-4 border border-border rounded-lg"
+                  className="flex items-center p-4 border border-border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                  onClick={() => setLocation(`/events/${event.id}`)}
                 >
                   <div className="flex-shrink-0 w-12 h-12 bg-primary rounded-full flex items-center justify-center">
                     <Calendar className="h-6 w-6 text-white" />

@@ -281,11 +281,11 @@ export default function PublicProfile() {
                 <CardTitle className="text-2xl">{user.name}</CardTitle>
                 <div className="flex items-center space-x-2 mt-1">
                   <Badge variant={user.role === "parent" ? "default" : "secondary"}>
-                    {user.role === "parent" ? "Pai/Mãe" : 
-                     user.role === "coordinator" ? "Coordenador" :
-                     user.role === "cuidador" ? "Cuidador" : 
-                     user.role === "caregiver" ? "Cuidador" : 
-                     user.role === "institution" ? "Instituição" : user.role}
+                    {user.role === "parent" ? "PAI/MÃE" : 
+                     user.role === "coordinator" ? "COORDENADOR" :
+                     user.role === "cuidador" ? "CUIDADOR" : 
+                     user.role === "caregiver" ? "CUIDADOR" : 
+                     user.role === "institution" ? "INSTITUIÇÃO" : user.role?.toUpperCase()}
                   </Badge>
                 </div>
               </div>
@@ -303,7 +303,7 @@ export default function PublicProfile() {
                     <div key={institution.id} className="flex items-center space-x-3 text-sm">
                       <Building className="h-4 w-4 text-muted-foreground" />
                       <span>
-                        {user.role === "parent" ? "Estudante" : "Cuidador"} na {institution.institutionName || institution.name}
+                        {user.role === "parent" ? "ESTUDANTE" : "CUIDADOR"} na {institution.institutionName || institution.name}
                       </span>
                     </div>
                   ))}

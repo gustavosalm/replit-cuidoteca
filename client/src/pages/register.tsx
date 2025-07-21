@@ -137,8 +137,8 @@ export default function Register() {
           <div className="flex items-center space-x-2 cursor-pointer" onClick={() => setLocation("/")}>
             <Heart className="h-6 w-6 text-accent hover:scale-110 transition-transform" />
             <CardTitle className="text-xl hover:text-accent transition-colors">
-              {userType === "institution" ? "Cadastro de Instituição" : 
-               userType === "cuidador" ? "Cadastro de Cuidador" : "Cadastro de Responsável"}
+              {userType === "institution" ? "Cadastro de INSTITUIÇÃO" : 
+               userType === "cuidador" ? "Cadastro de CUIDADOR" : "Cadastro de RESPONSÁVEL"}
             </CardTitle>
           </div>
           <Button
@@ -162,7 +162,7 @@ export default function Register() {
                   className="h-16 flex-col text-sm"
                 >
                   <Heart className="h-5 w-5 mb-1" />
-                  Responsável
+                  RESPONSÁVEL
                 </Button>
                 <Button
                   type="button"
@@ -171,7 +171,7 @@ export default function Register() {
                   className="h-16 flex-col text-sm"
                 >
                   <Heart className="h-5 w-5 mb-1" />
-                  Cuidador
+                  CUIDADOR
                 </Button>
                 <Button
                   type="button"
@@ -180,7 +180,7 @@ export default function Register() {
                   className="h-16 flex-col text-sm"
                 >
                   <Building className="h-5 w-5 mb-1" />
-                  Instituição
+                  INSTITUIÇÃO
                 </Button>
               </div>
             </div>

@@ -107,11 +107,25 @@ export default function Header() {
             </div>
             <div className="flex items-center space-x-2">
               <span className="text-sm text-muted-foreground hidden sm:block">
-                {user?.name} ({user?.role})
+                {user?.name} ({user?.role?.toUpperCase()})
               </span>
-              <Button variant="ghost" size="sm" onClick={() => setLocation("/profile")} title="Profile" className="flex items-center space-x-2">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => {
+                  if (user?.role === "institution") {
+                    setLocation(`/users/${user.id}`);
+                  } else {
+                    setLocation("/profile");
+                  }
+                }} 
+                title="Profile" 
+                className="flex items-center space-x-2"
+              >
                 <User className="h-4 w-4" />
-                <span className="hidden sm:inline">Editar perfil</span>
+                <span className="hidden sm:inline">
+                  {user?.role === "institution" ? "Meu Perfil" : "Editar perfil"}
+                </span>
               </Button>
               <Button variant="ghost" size="sm" onClick={handleLogout} title="Logout">
                 <LogOut className="h-4 w-4" />

@@ -135,6 +135,26 @@ Preferred communication style: Simple, everyday language.
   - Added helpful hint text directing users to main action button
   - Cleaner interface with better user experience
 
+### July 21, 2025 - UI Enhancements and Role Display Updates
+- **Role Display Standardization**: Updated all role references to use CAPS LOCK format
+  - Header user indicator now shows roles in uppercase (PARENT, CUIDADOR, INSTITUTION)
+  - Profile pages display roles as RESPONSÁVEL, CUIDADOR(A), COORDENADOR(A), INSTITUIÇÃO
+  - Registration form buttons now show RESPONSÁVEL, CUIDADOR, INSTITUIÇÃO
+  - Public profile badges updated to PAI/MÃE, CUIDADOR, COORDENADOR, INSTITUIÇÃO
+  - Connection buttons updated to SOU ESTUDANTE, SOU CUIDADOR in uppercase
+- **Institution Profile Button Enhancement**: Modified profile navigation for institutions
+  - Institution users now get "Meu Perfil" button that redirects to public profile view
+  - Non-institution users continue to get "Editar perfil" button for profile editing
+  - Provides better user experience for institutions viewing their public presence
+- **Dashboard Events Interaction**: Made events in dashboard clickable
+  - Events in "Próximos Eventos" section now redirect to event detail page when clicked
+  - Added hover effects and cursor pointer for better user experience
+  - Smooth transition colors when hovering over event items
+- **Approved Children Count Display**: Added approved children count to institution profiles
+  - Institution public profiles now show total approved children across all cuidotecas
+  - Displays as separate badge alongside connected users count
+  - Real-time updates when children get approved or rejected
+
 ### July 21, 2025 - Enhanced Institution Bulk Messaging with Enrollment-Based Targeting
 - **Advanced Bulk Messaging**: Enhanced institution messaging system with enrollment-based targeting
   - Added support for messaging parents with children approved in institution's cuidotecas
