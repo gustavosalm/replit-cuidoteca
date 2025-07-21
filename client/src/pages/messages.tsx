@@ -231,7 +231,14 @@ export default function Messages() {
                       onClick={() => setSelectedUserId(connectedUser.id)}
                     >
                       <div className="flex items-center space-x-3">
-                        <Avatar className="w-10 h-10">
+                        <Avatar 
+                          className="w-10 h-10 cursor-pointer hover:ring-2 hover:ring-primary/20 transition-all"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setLocation(`/profile/${connectedUser.id}`);
+                          }}
+                          title="Ver perfil"
+                        >
                           {connectedUser.profilePicture ? (
                             <AvatarImage src={connectedUser.profilePicture} />
                           ) : (
@@ -241,7 +248,14 @@ export default function Messages() {
                           )}
                         </Avatar>
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-sm truncate">
+                          <p 
+                            className="font-semibold text-sm truncate hover:text-primary cursor-pointer transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setLocation(`/profile/${connectedUser.id}`);
+                            }}
+                            title="Ver perfil"
+                          >
                             {connectedUser.name}
                           </p>
                           {existingConversation ? (
@@ -255,7 +269,7 @@ export default function Messages() {
                             </>
                           ) : (
                             <p className="text-xs text-muted-foreground">
-                              Clique para conversar
+                              Clique para conversar • Clique no nome/avatar para ver perfil
                             </p>
                           )}
                         </div>
@@ -274,19 +288,25 @@ export default function Messages() {
             <>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-3">
-                  <Avatar className="w-8 h-8">
-                    {(selectedConversation?.otherUserProfilePicture || selectedConversation?.profilePicture) ? (
-                      <AvatarImage src={selectedConversation.otherUserProfilePicture || selectedConversation.profilePicture} />
-                    ) : (
-                      <AvatarFallback>
-                        {selectedConversation?.name ? 
-                          selectedConversation.name.split(' ').map((n: string) => n[0]).join('').toUpperCase() :
-                          <User className="w-4 h-4" />
-                        }
-                      </AvatarFallback>
-                    )}
-                  </Avatar>
-                  <span>{selectedConversation?.otherUserName || selectedConversation?.name}</span>
+                  <div 
+                    className="flex items-center space-x-3 cursor-pointer hover:opacity-75 transition-opacity"
+                    onClick={() => setLocation(`/profile/${selectedUserId}`)}
+                    title="Ver perfil"
+                  >
+                    <Avatar className="w-8 h-8">
+                      {(selectedConversation?.otherUserProfilePicture || selectedConversation?.profilePicture) ? (
+                        <AvatarImage src={selectedConversation.otherUserProfilePicture || selectedConversation.profilePicture} />
+                      ) : (
+                        <AvatarFallback>
+                          {selectedConversation?.name ? 
+                            selectedConversation.name.split(' ').map((n: string) => n[0]).join('').toUpperCase() :
+                            <User className="w-4 h-4" />
+                          }
+                        </AvatarFallback>
+                      )}
+                    </Avatar>
+                    <span>{selectedConversation?.otherUserName || selectedConversation?.name}</span>
+                  </div>
                 </CardTitle>
               </CardHeader>
               <Separator />
