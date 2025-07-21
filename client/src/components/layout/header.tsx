@@ -70,7 +70,7 @@ export default function Header() {
                 variant={location.startsWith("/profile/") ? "default" : "ghost"}
                 onClick={() => setLocation(`/profile/${user?.id}`)}
               >
-                Perfil
+                Meu Perfil
               </Button>
               {user?.role === "coordinator" && (
                 <Button
