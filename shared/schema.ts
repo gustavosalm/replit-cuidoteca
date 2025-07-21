@@ -24,6 +24,7 @@ export const users = pgTable("users", {
   institutionName: text("institution_name"),
   memberCount: integer("member_count").default(0),
   profilePicture: text("profile_picture"),
+  communityDescription: text("community_description"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -66,6 +67,7 @@ export const posts = pgTable("posts", {
   upvotes: integer("upvotes").default(0).notNull(),
   downvotes: integer("downvotes").default(0).notNull(),
   flagged: boolean("flagged").default(false).notNull(),
+  pinned: boolean("pinned").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

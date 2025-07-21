@@ -7,15 +7,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { ChevronUp, ChevronDown, MessageCircle, User, Send, Trash2, Flag } from "lucide-react";
+import { ChevronUp, ChevronDown, MessageCircle, User, Send, Trash2, Flag, Edit2, Check, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { Input } from "@/components/ui/input";
 
 export default function Community() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [newPost, setNewPost] = useState("");
+  const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [tempDescription, setTempDescription] = useState("");
 
   // Get user's connections to check if they're connected to any institution
   const { data: userConnections } = useQuery({
@@ -116,6 +119,42 @@ export default function Community() {
     },
   });
 
+  const updateDescriptionMutation = useMutation({
+    mutationFn: async (description: string) => {
+      return await apiRequest("PUT", "/api/users/me", { communityDescription: description });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users/me"] });
+      setIsEditingDescription(false);
+      toast({
+        title: "Descrição atualizada!",
+        description: "A descrição da comunidade foi atualizada",
+      });
+    },
+    onError: (error: any) => {
+      const errorMessage = error?.response?.data?.message || "Não foi possível atualizar a descrição";
+      toast({
+        title: "Erro ao atualizar descrição",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleEditDescription = () => {
+    setTempDescription(user?.communityDescription || "");
+    setIsEditingDescription(true);
+  };
+
+  const handleSaveDescription = () => {
+    updateDescriptionMutation.mutate(tempDescription.trim());
+  };
+
+  const handleCancelEditDescription = () => {
+    setIsEditingDescription(false);
+    setTempDescription("");
+  };
+
   const handleCreatePost = () => {
     // Institutions can always post in their own community
     if (user?.role !== 'institution' && (!userConnections || userConnections.length === 0)) {
@@ -166,9 +205,58 @@ export default function Community() {
         <div className="mb-8">
           <Card>
             <CardHeader>
-              <CardTitle className="text-2xl">
-                Comunidade {institutionDetails?.name || institutionDetails?.institutionName || "Cuidoteca"}
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-2xl">
+                  Comunidade {institutionDetails?.name || institutionDetails?.institutionName || "Cuidoteca"}
+                </CardTitle>
+                {user?.role === 'institution' && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleEditDescription}
+                    disabled={isEditingDescription}
+                  >
+                    <Edit2 className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+              
+              {/* Community Description */}
+              {isEditingDescription ? (
+                <div className="space-y-2 mt-3">
+                  <Input
+                    placeholder="Adicione uma descrição para a comunidade..."
+                    value={tempDescription}
+                    onChange={(e) => setTempDescription(e.target.value)}
+                    maxLength={200}
+                  />
+                  <div className="flex justify-end space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCancelEditDescription}
+                      disabled={updateDescriptionMutation.isPending}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={handleSaveDescription}
+                      disabled={updateDescriptionMutation.isPending}
+                    >
+                      <Check className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ) : user?.communityDescription ? (
+                <p className="text-muted-foreground mt-2">{user.communityDescription}</p>
+              ) : (
+                user?.role === 'institution' && (
+                  <p className="text-muted-foreground text-sm mt-2 italic">
+                    Clique no ícone de editar para adicionar uma descrição da comunidade
+                  </p>
+                )
+              )}
             </CardHeader>
             <CardContent>
               {(user?.role !== 'institution' && (!userConnections || userConnections.length === 0)) ? (
