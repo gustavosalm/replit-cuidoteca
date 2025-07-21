@@ -94,11 +94,36 @@ export default function Register() {
           ? "Instituição cadastrada com sucesso!" 
           : "Bem-vinda à Cuidoteca",
       });
-    } catch (error) {
+    } catch (error: any) {
+      // Show specific error message from backend
+      const errorMessage = error.message || "Verifique os dados e tente novamente";
+      
+      // Translate common error messages to Portuguese
+      let description = errorMessage;
+      let showLoginLink = false;
+      
+      if (errorMessage === "User already exists") {
+        description = "Já existe uma conta com este email.";
+        showLoginLink = true;
+      } else if (errorMessage.includes("already exists")) {
+        description = "Já existe uma conta com este email.";
+        showLoginLink = true;
+      } else if (errorMessage.includes("validation") || errorMessage.includes("required")) {
+        description = "Alguns campos obrigatórios não foram preenchidos corretamente.";
+      } else if (errorMessage.includes("password")) {
+        description = "Problema com a senha. Verifique se atende aos requisitos.";
+      } else if (errorMessage === "Registration failed") {
+        description = "Falha no cadastro. Verifique os dados e tente novamente.";
+      }
+      
       toast({
         title: "Erro no cadastro",
-        description: "Verifique os dados e tente novamente",
+        description: showLoginLink ? 
+          `${description} Clique aqui para fazer login.` : 
+          description,
         variant: "destructive",
+        onClick: showLoginLink ? () => setLocation("/login") : undefined,
+        style: showLoginLink ? { cursor: 'pointer' } : undefined,
       });
     } finally {
       setIsLoading(false);

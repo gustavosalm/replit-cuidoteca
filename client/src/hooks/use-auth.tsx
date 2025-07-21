@@ -65,7 +65,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       localStorage.setItem('token', data.token);
       setUser(data.user);
-    } catch (error) {
+    } catch (error: any) {
+      // The apiRequest function throws errors in format "status: responseText"
+      // Extract the actual error message from the backend
+      if (error.message && error.message.includes(':')) {
+        const errorMessage = error.message.split(':', 2)[1].trim();
+        try {
+          // Try to parse as JSON to get the structured error message
+          const errorData = JSON.parse(errorMessage);
+          throw new Error(errorData.message || 'Registration failed');
+        } catch {
+          // If not JSON, use the error message directly
+          throw new Error(errorMessage || 'Registration failed');
+        }
+      }
       throw new Error('Registration failed');
     }
   };
