@@ -51,7 +51,7 @@ import {
   type InstitutionWithConnections,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, sql } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
@@ -1070,6 +1070,21 @@ export class DatabaseStorage implements IStorage {
       );
     
     return result;
+  }
+
+  async getInstitutionApprovedChildrenCount(institutionId: number): Promise<number> {
+    const result = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(cuidotecaEnrollments)
+      .innerJoin(cuidotecas, eq(cuidotecaEnrollments.cuidotecaId, cuidotecas.id))
+      .where(
+        and(
+          eq(cuidotecas.institutionId, institutionId),
+          eq(cuidotecaEnrollments.status, 'confirmed')
+        )
+      );
+    
+    return result[0]?.count || 0;
   }
 
   async getCuidotecaPendingChildren(cuidotecaId: number): Promise<any[]> {

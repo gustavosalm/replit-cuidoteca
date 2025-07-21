@@ -1131,6 +1131,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get institution approved children count
+  app.get('/api/institutions/:id/approved-children-count', authenticateToken, async (req, res) => {
+    try {
+      const institutionId = parseInt(req.params.id);
+      const count = await storage.getInstitutionApprovedChildrenCount(institutionId);
+      res.json({ count });
+    } catch (error) {
+      console.error('Get approved children count error:', error);
+      res.status(500).json({ message: 'Failed to get approved children count' });
+    }
+  });
+
   app.post('/api/institutions/:id/connect', authenticateToken, async (req, res) => {
     try {
       const institutionId = parseInt(req.params.id);

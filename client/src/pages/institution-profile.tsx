@@ -63,6 +63,11 @@ export default function InstitutionProfile() {
     enabled: !!user,
   });
 
+  const { data: approvedChildrenCount = { count: 0 } } = useQuery({
+    queryKey: ["/api/institutions", id, "approved-children-count"],
+    enabled: !!id,
+  });
+
   const connectMutation = useMutation({
     mutationFn: () =>
       apiRequest("POST", `/api/institutions/${id}/connect`),
@@ -187,6 +192,9 @@ export default function InstitutionProfile() {
               <div className="flex items-center space-x-2">
                 <Badge variant="secondary" className="text-sm">
                   {(connectedStudents.length + connectedCuidadores.length)} pessoas conectadas
+                </Badge>
+                <Badge variant="outline" className="text-sm">
+                  {approvedChildrenCount.count} crianças aprovadas
                 </Badge>
               </div>
             </div>
