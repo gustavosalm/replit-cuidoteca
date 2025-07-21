@@ -89,7 +89,9 @@ export default function PublicProfile() {
   const canConnect = currentUser && user && 
     currentUser.id !== user.id && 
     ((currentUser.role === 'parent' && user.role === 'cuidador') || 
-     (currentUser.role === 'cuidador' && user.role === 'parent'));
+     (currentUser.role === 'cuidador' && user.role === 'parent') ||
+     (currentUser.role === 'parent' && user.role === 'parent') ||
+     (currentUser.role === 'cuidador' && user.role === 'cuidador'));
 
   // Send message mutation
   const sendMessageMutation = useMutation({
