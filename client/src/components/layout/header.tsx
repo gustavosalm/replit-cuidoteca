@@ -67,8 +67,8 @@ export default function Header() {
                 Instituições
               </Button>
               <Button
-                variant={location === "/profile" ? "default" : "ghost"}
-                onClick={() => setLocation("/profile")}
+                variant={location.startsWith("/profile/") ? "default" : "ghost"}
+                onClick={() => setLocation(`/profile/${user?.id}`)}
               >
                 Perfil
               </Button>
@@ -109,7 +109,7 @@ export default function Header() {
               <span className="text-sm text-muted-foreground hidden sm:block">
                 {user?.name} ({user?.role})
               </span>
-              <Button variant="ghost" size="sm" onClick={() => setLocation(`/profile/${user?.id}`)} title="Profile">
+              <Button variant="ghost" size="sm" onClick={() => setLocation("/profile")} title="Profile">
                 <User className="h-4 w-4" />
               </Button>
               <Button variant="ghost" size="sm" onClick={handleLogout} title="Logout">
