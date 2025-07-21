@@ -717,6 +717,43 @@ export class DatabaseStorage implements IStorage {
     return connections.map(connection => connection.institution).filter(inst => inst.role === 'institution');
   }
 
+  async createUserConnection(userId: number, connectedUserId: number): Promise<void> {
+    // Create bidirectional user connection for messaging
+    await db.insert(userConnections).values({
+      userId,
+      connectedUserId,
+      status: 'accepted'
+    }).onConflictDoNothing();
+    
+    // Create reverse connection
+    await db.insert(userConnections).values({
+      userId: connectedUserId,
+      connectedUserId: userId,
+      status: 'accepted'
+    }).onConflictDoNothing();
+  }
+
+  async removeUserConnection(userId: number, connectedUserId: number): Promise<void> {
+    // Remove both directions of user connection
+    await db
+      .delete(userConnections)
+      .where(
+        and(
+          eq(userConnections.userId, userId),
+          eq(userConnections.connectedUserId, connectedUserId)
+        )
+      );
+    
+    await db
+      .delete(userConnections)
+      .where(
+        and(
+          eq(userConnections.userId, connectedUserId),
+          eq(userConnections.connectedUserId, userId)
+        )
+      );
+  }
+
   // Cuidoteca operations
   async getCuidotecasByInstitution(institutionId: number): Promise<Cuidoteca[]> {
     return await db

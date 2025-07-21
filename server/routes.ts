@@ -1284,6 +1284,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const connection = await storage.connectToInstitution(userId, institutionId);
+      
+      // Also create a user-to-user connection for private messaging
+      try {
+        await storage.createUserConnection(userId, institutionId);
+      } catch (error) {
+        // Ignore if connection already exists
+        console.log('User connection may already exist for messaging');
+      }
+      
       res.status(201).json(connection);
     } catch (error) {
       console.error('Connect to institution error:', error);
@@ -1297,6 +1306,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.id;
       
       await storage.disconnectFromInstitution(userId, institutionId);
+      
+      // Also remove user-to-user connection for messaging
+      try {
+        await storage.removeUserConnection(userId, institutionId);
+      } catch (error) {
+        // Ignore if connection doesn't exist
+        console.log('User connection may not exist for messaging');
+      }
+      
       res.status(204).send();
     } catch (error) {
       console.error('Disconnect from institution error:', error);
