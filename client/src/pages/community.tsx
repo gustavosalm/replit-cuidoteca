@@ -6,7 +6,7 @@ import MobileNav from "@/components/layout/mobile-nav";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ChevronUp, ChevronDown, MessageCircle, User, Send } from "lucide-react";
+import { ChevronUp, ChevronDown, MessageCircle, User, Send, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -73,6 +73,27 @@ export default function Community() {
     },
   });
 
+  const deletePostMutation = useMutation({
+    mutationFn: async (postId: number) => {
+      return await apiRequest("DELETE", `/api/posts/${postId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
+      toast({
+        title: "Post excluído",
+        description: "Sua mensagem foi removida da comunidade",
+      });
+    },
+    onError: (error: any) => {
+      const errorMessage = error?.response?.data?.message || "Não foi possível excluir o post";
+      toast({
+        title: "Erro ao excluir post",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleCreatePost = () => {
     if (!userConnections || userConnections.length === 0) {
       toast({
@@ -92,6 +113,16 @@ export default function Community() {
       return;
     }
     createPostMutation.mutate(newPost.trim());
+  };
+
+  const handleDeletePost = (postId: number, postContent: string) => {
+    const confirmMessage = postContent.length > 50 
+      ? `Tem certeza que deseja excluir este post?\n\n"${postContent.substring(0, 50)}..."`
+      : `Tem certeza que deseja excluir este post?\n\n"${postContent}"`;
+    
+    if (confirm(confirmMessage)) {
+      deletePostMutation.mutate(postId);
+    }
   };
 
   const formatTimeAgo = (date: string) => {
@@ -210,19 +241,33 @@ export default function Community() {
                       <User className="h-5 w-5 text-primary" />
                     </button>
                     <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-2">
-                        <button
-                          className="font-medium text-foreground hover:text-primary transition-colors cursor-pointer"
-                          onClick={() => {
-                            // Navigate to user profile
-                            window.location.href = `/profile/${post.authorId}`;
-                          }}
-                        >
-                          {post.author?.name}
-                        </button>
-                        <span className="text-sm text-muted-foreground">
-                          {formatTimeAgo(post.createdAt)}
-                        </span>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center space-x-2">
+                          <button
+                            className="font-medium text-foreground hover:text-primary transition-colors cursor-pointer"
+                            onClick={() => {
+                              // Navigate to user profile
+                              window.location.href = `/profile/${post.authorId}`;
+                            }}
+                          >
+                            {post.author?.name}
+                          </button>
+                          <span className="text-sm text-muted-foreground">
+                            {formatTimeAgo(post.createdAt)}
+                          </span>
+                        </div>
+                        {user && post.authorId === user.id && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeletePost(post.id, post.content)}
+                            disabled={deletePostMutation.isPending}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
+                            title="Excluir post"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                       <p className="text-foreground mb-4 whitespace-pre-wrap">
                         {post.content}

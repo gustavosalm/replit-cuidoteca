@@ -939,6 +939,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete a post (only post author can delete)
+  app.delete('/api/posts/:id', authenticateToken, async (req, res) => {
+    try {
+      const postId = parseInt(req.params.id);
+      const post = await storage.getPost(postId);
+      
+      if (!post) {
+        return res.status(404).json({ message: 'Post not found' });
+      }
+      
+      // Only the post author can delete their post
+      if (post.authorId !== req.user.id) {
+        return res.status(403).json({ message: 'You can only delete your own posts' });
+      }
+      
+      await storage.deletePost(postId);
+      res.status(204).send();
+    } catch (error) {
+      console.error('Delete post error:', error);
+      res.status(500).json({ message: 'Failed to delete post' });
+    }
+  });
+
   // Get user's vote on a specific post
   app.get('/api/posts/:id/my-vote', authenticateToken, async (req, res) => {
     try {
