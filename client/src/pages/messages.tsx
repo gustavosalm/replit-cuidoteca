@@ -64,7 +64,8 @@ export default function Messages() {
   // Send message mutation
   const sendMessageMutation = useMutation({
     mutationFn: async (data: { receiverId: number; content: string }) => {
-      return apiRequest('/api/messages', 'POST', data);
+      const response = await apiRequest('POST', '/api/messages', data);
+      return await response.json();
     },
     onSuccess: () => {
       setMessageText("");
@@ -76,7 +77,8 @@ export default function Messages() {
   // Send bulk message mutation (for institutions)
   const sendBulkMessageMutation = useMutation({
     mutationFn: async (data: { targetGroup: string; content: string }) => {
-      return apiRequest('/api/messages/bulk', 'POST', data);
+      const response = await apiRequest('POST', '/api/messages/bulk', data);
+      return await response.json();
     },
     onSuccess: (response) => {
       setBulkMessageText("");

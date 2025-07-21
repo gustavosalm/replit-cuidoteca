@@ -64,9 +64,14 @@ export default function Informacoes() {
 
   const createDocumentMutation = useMutation({
     mutationFn: async (data: DocumentFormData & { fileUrl: string; fileSize: number; fileType: string }) => {
-      return apiRequest('/api/documents', 'POST', data);
+      console.log('Making API request to /api/documents with data length:', JSON.stringify(data).length);
+      const response = await apiRequest('POST', '/api/documents', data);
+      const result = await response.json();
+      console.log('API request successful:', result);
+      return result;
     },
     onSuccess: () => {
+      console.log('Document upload successful');
       queryClient.invalidateQueries({ queryKey: ['/api/documents'] });
       toast({
         title: "Sucesso",
@@ -77,6 +82,7 @@ export default function Informacoes() {
       setSelectedFile(null);
     },
     onError: (error: any) => {
+      console.error('Document upload failed:', error);
       toast({
         title: "Erro",
         description: error.message || "Falha ao enviar documento",
@@ -87,7 +93,8 @@ export default function Informacoes() {
 
   const deleteDocumentMutation = useMutation({
     mutationFn: async (id: number) => {
-      return apiRequest(`/api/documents/${id}`, 'DELETE');
+      const response = await apiRequest('DELETE', `/api/documents/${id}`);
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/documents'] });
@@ -108,8 +115,25 @@ export default function Informacoes() {
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      // Check file size (10MB limit)
+      const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+      if (file.size > maxSize) {
+        toast({
+          title: "Erro",
+          description: "Arquivo muito grande. Tamanho máximo: 10MB",
+          variant: "destructive",
+        });
+        event.target.value = ''; // Clear the input
+        return;
+      }
+      
       setSelectedFile(file);
       form.setValue('fileName', file.name);
+      
+      // Also set a default title if empty
+      if (!form.getValues('title')) {
+        form.setValue('title', file.name);
+      }
     }
   };
 
@@ -133,16 +157,39 @@ export default function Informacoes() {
     }
 
     try {
-      const fileBase64 = await convertToBase64(selectedFile);
+      console.log('Starting file upload process...');
+      console.log('File details:', {
+        name: selectedFile.name,
+        size: selectedFile.size,
+        type: selectedFile.type
+      });
       
-      await createDocumentMutation.mutateAsync({
+      const fileBase64 = await convertToBase64(selectedFile);
+      console.log('File converted to base64, length:', fileBase64.length);
+      
+      const documentData = {
         ...data,
         fileUrl: fileBase64,
         fileSize: selectedFile.size,
         fileType: selectedFile.type,
+      };
+      
+      console.log('Submitting document data:', {
+        title: documentData.title,
+        fileName: documentData.fileName,
+        fileSize: documentData.fileSize,
+        fileType: documentData.fileType,
+        isPublic: documentData.isPublic
       });
+      
+      await createDocumentMutation.mutateAsync(documentData);
     } catch (error) {
       console.error('Error uploading document:', error);
+      toast({
+        title: "Erro",
+        description: `Falha ao enviar documento: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
+        variant: "destructive",
+      });
     }
   };
 
