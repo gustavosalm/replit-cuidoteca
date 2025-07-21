@@ -76,6 +76,7 @@ export default function Dashboard() {
         {user.role === 'parent' && (
           <>
             <ChildrenList />
+            <Notifications />
             <EventsList />
           </>
         )}
@@ -91,7 +92,7 @@ export default function Dashboard() {
           <CuidadorEnrollmentsList />
         )}
         <CommunityPreview />
-        <Notifications />
+        {user.role !== 'parent' && <Notifications />}
       </main>
 
       <MobileNav />
