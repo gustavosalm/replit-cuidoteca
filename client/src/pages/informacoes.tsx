@@ -13,7 +13,8 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest } from "@/lib/queryClient";
-import { FileText, Download, Upload, Trash2, Calendar, User, Building2 } from "lucide-react";
+import { FileText, Download, Upload, Trash2, Calendar, User, Building2, LayoutDashboard } from "lucide-react";
+import { Link } from "wouter";
 import { z } from "zod";
 
 const documentFormSchema = insertInstitutionDocumentSchema.omit({
@@ -223,14 +224,22 @@ export default function Informacoes() {
           </p>
         </div>
 
-        {user?.role === 'institution' && (
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Upload className="w-4 h-4 mr-2" />
-                Enviar Documento
-              </Button>
-            </DialogTrigger>
+        <div className="flex gap-2">
+          <Link href="/dashboard">
+            <Button variant="outline">
+              <LayoutDashboard className="w-4 h-4 mr-2" />
+              Dashboard
+            </Button>
+          </Link>
+          
+          {user?.role === 'institution' && (
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Upload className="w-4 h-4 mr-2" />
+                  Enviar Documento
+                </Button>
+              </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
                 <DialogTitle>Enviar Novo Documento</DialogTitle>
@@ -305,7 +314,8 @@ export default function Informacoes() {
               </Form>
             </DialogContent>
           </Dialog>
-        )}
+          )}
+        </div>
       </div>
 
       {isLoading ? (
