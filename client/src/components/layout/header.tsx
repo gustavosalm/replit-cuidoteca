@@ -112,19 +112,13 @@ export default function Header() {
               <Button 
                 variant="ghost" 
                 size="sm" 
-                onClick={() => {
-                  if (user?.role === "institution") {
-                    setLocation(`/users/${user.id}`);
-                  } else {
-                    setLocation("/profile");
-                  }
-                }} 
-                title="Profile" 
+                onClick={() => setLocation("/profile")} 
+                title="Editar Perfil" 
                 className="flex items-center space-x-2"
               >
                 <User className="h-4 w-4" />
                 <span className="hidden sm:inline">
-                  {user?.role === "institution" ? "Meu Perfil" : "Editar perfil"}
+                  Editar Perfil
                 </span>
               </Button>
               <Button variant="ghost" size="sm" onClick={handleLogout} title="Logout">
