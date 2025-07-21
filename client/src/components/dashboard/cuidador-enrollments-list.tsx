@@ -61,13 +61,14 @@ export function CuidadorEnrollmentsList() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center">
-          <CalendarDays className="h-5 w-5 mr-2" />
-          Minhas Inscrições ({enrollments.length})
-        </CardTitle>
-      </CardHeader>
+    <div className="mb-8">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <CalendarDays className="h-5 w-5 mr-2" />
+            Minhas Inscrições ({enrollments.length})
+          </CardTitle>
+        </CardHeader>
       <CardContent>
         {enrollments.length === 0 ? (
           <div className="text-center py-8">
@@ -153,6 +154,7 @@ export function CuidadorEnrollmentsList() {
           </div>
         )}
       </CardContent>
-    </Card>
+      </Card>
+    </div>
   );
 }
