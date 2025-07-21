@@ -126,12 +126,6 @@ export default function ChildrenList() {
                 <p className="text-muted-foreground">
                   Nenhuma criança cadastrada ainda
                 </p>
-                <Button
-                  onClick={() => setIsChildModalOpen(true)}
-                  className="mt-4"
-                >
-                  Cadastrar primeira criança
-                </Button>
               </div>
             ) : (
               <div className="space-y-4">
