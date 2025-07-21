@@ -648,16 +648,43 @@ export class DatabaseStorage implements IStorage {
       .insert(universityConnections)
       .values({ userId, institutionId })
       .returning();
+    
+    // Automatically create reverse connection (institution to user)
+    // Check if reverse connection already exists to avoid duplicates
+    const existingReverseConnection = await db.query.universityConnections.findFirst({
+      where: and(
+        eq(universityConnections.userId, institutionId),
+        eq(universityConnections.institutionId, userId)
+      )
+    });
+    
+    if (!existingReverseConnection) {
+      await db
+        .insert(universityConnections)
+        .values({ userId: institutionId, institutionId: userId });
+    }
+    
     return connection;
   }
 
   async disconnectFromInstitution(userId: number, institutionId: number): Promise<void> {
+    // Remove both directions of connection
     await db
       .delete(universityConnections)
       .where(
         and(
           eq(universityConnections.userId, userId),
           eq(universityConnections.institutionId, institutionId)
+        )
+      );
+    
+    // Also remove reverse connection
+    await db
+      .delete(universityConnections)
+      .where(
+        and(
+          eq(universityConnections.userId, institutionId),
+          eq(universityConnections.institutionId, userId)
         )
       );
   }
@@ -667,6 +694,17 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(universityConnections)
       .where(eq(universityConnections.userId, userId));
+  }
+
+  async getUserInstitutionConnections(userId: number): Promise<User[]> {
+    const connections = await db.query.universityConnections.findMany({
+      where: eq(universityConnections.userId, userId),
+      with: {
+        institution: true,
+      },
+    });
+
+    return connections.map(connection => connection.institution).filter(inst => inst.role === 'institution');
   }
 
   // Cuidoteca operations

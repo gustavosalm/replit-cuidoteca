@@ -74,6 +74,12 @@ export default function PublicProfile() {
     connectedCuidadores.some((cuidador: any) => cuidador.id === user.id)
   );
 
+  // Get user's connected institutions
+  const { data: userInstitutions = [] } = useQuery({
+    queryKey: ["/api/users", id, "institutions"],
+    enabled: !!id && !!user,
+  });
+
   // Check if current user can connect to this user
   const canConnect = currentUser && user && 
     currentUser.id !== user.id && 
@@ -280,6 +286,23 @@ export default function PublicProfile() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
+              {/* Institution Affiliation */}
+              {userInstitutions.length > 0 && (user.role === "parent" || user.role === "cuidador") && (
+                <div className="space-y-3">
+                  <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+                    Afiliação Institucional
+                  </h3>
+                  {userInstitutions.map((institution: any) => (
+                    <div key={institution.id} className="flex items-center space-x-3 text-sm">
+                      <Building className="h-4 w-4 text-muted-foreground" />
+                      <span>
+                        {user.role === "parent" ? "Estudante" : "Cuidador"} na {institution.institutionName || institution.name}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               {/* Contact Information */}
               <div className="space-y-3">
                 <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">

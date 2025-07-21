@@ -356,6 +356,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get user's connected institutions
+  app.get('/api/users/:id/institutions', authenticateToken, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const institutions = await storage.getUserInstitutionConnections(userId);
+      res.json(institutions);
+    } catch (error) {
+      console.error('Get user institutions error:', error);
+      res.status(500).json({ message: 'Failed to get user institutions' });
+    }
+  });
+
   // Check if users are connected
   app.get('/api/users/:id/connection-status', authenticateToken, async (req, res) => {
     try {
