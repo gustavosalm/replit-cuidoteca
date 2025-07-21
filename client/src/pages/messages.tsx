@@ -49,6 +49,12 @@ export default function Messages() {
     enabled: !!user,
   });
 
+  // Get user's institution connections
+  const { data: userConnections = [] } = useQuery({
+    queryKey: ["/api/users/connections"],
+    enabled: !!user,
+  });
+
   // Get messages with selected user
   const { data: messages = [] } = useQuery<Message[]>({
     queryKey: ["/api/messages", selectedUserId],
@@ -118,7 +124,10 @@ export default function Messages() {
   } : null);
 
   // Check if current user is still connected to the selected user
-  const isConnectedToSelectedUser = connectedUsers.some((user: any) => user.id === selectedUserId);
+  // For institutions, check if user is connected to the institution via university_connections
+  // For regular users, check user-to-user connections
+  const isConnectedToSelectedUser = connectedUsers.some((user: any) => user.id === selectedUserId) || 
+    (selectedUserInfo?.role === 'institution' && userConnections.some((conn: any) => conn.institutionId === selectedUserId));
 
   if (!user) {
     return <div>Por favor, faça login para acessar suas mensagens.</div>;
