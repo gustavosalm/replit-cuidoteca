@@ -116,6 +116,31 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### July 21, 2025 - Enhanced Institution Bulk Messaging with Enrollment-Based Targeting
+- **Advanced Bulk Messaging**: Enhanced institution messaging system with enrollment-based targeting
+  - Added support for messaging parents with children approved in institution's cuidotecas
+  - Added support for messaging cuidadores approved in institution's cuidotecas
+  - Added combined targeting for all approved users (both parents and cuidadores)
+  - Six total target options: connected users (all/parents/cuidadores) and approved users (all/parents/cuidadores)
+- **Backend Storage Functions**: Implemented specialized queries for enrollment-based messaging
+  - `getParentsWithApprovedChildren()` - finds parents with confirmed child enrollments
+  - `getCuidadoresWithApprovedEnrollments()` - finds cuidadores with confirmed enrollments
+  - Enhanced bulk messaging API to support new target groups with detailed error handling
+- **Frontend UI Improvements**: Updated bulk messaging interface
+  - Added three new target group options for approved users
+  - Enhanced dialog description to explain enrollment-based targeting
+  - Clear labeling to distinguish between all connected users vs. approved users
+
+### July 21, 2025 - Institution Messaging System Fix
+- **Connected Users API Fix**: Fixed `/api/users/me/connected-users` endpoint for institutions
+  - Institutions now properly see all their connected users (parents and cuidadores)
+  - Regular users continue to see their user-to-user connections
+  - Role-based logic ensures appropriate data access for each user type
+- **Messaging Functionality Restored**: Institutions can now message connected users through chat interface
+  - Fixed conversation list to show institution's connected users
+  - Individual messaging works properly for institutions
+  - Bulk messaging functionality verified working for all connected users
+
 ### July 21, 2025 - Application Startup Fix
 - **Database Connection Fix**: Resolved DATABASE_URL environment variable issue preventing application startup
 - **PostgreSQL Provisioning**: Re-provisioned PostgreSQL database to properly set all required environment variables

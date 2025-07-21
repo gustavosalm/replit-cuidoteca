@@ -1230,6 +1230,59 @@ export class DatabaseStorage implements IStorage {
     return newMessages;
   }
 
+  // Get parents who have children with confirmed enrollments in institution's cuidotecas
+  async getParentsWithApprovedChildren(institutionId: number): Promise<User[]> {
+    const result = await db
+      .select({
+        user: users,
+      })
+      .from(users)
+      .innerJoin(children, eq(children.parentId, users.id))
+      .innerJoin(cuidotecaEnrollments, eq(cuidotecaEnrollments.childId, children.id))
+      .innerJoin(cuidotecas, eq(cuidotecas.id, cuidotecaEnrollments.cuidotecaId))
+      .where(
+        and(
+          eq(cuidotecas.institutionId, institutionId),
+          eq(cuidotecaEnrollments.status, 'confirmed'),
+          eq(users.role, 'parent')
+        )
+      );
+    
+    // Remove duplicates by converting to Map and back to array
+    const uniqueUsers = new Map();
+    result.forEach(item => {
+      uniqueUsers.set(item.user.id, item.user);
+    });
+    
+    return Array.from(uniqueUsers.values());
+  }
+
+  // Get cuidadores with confirmed enrollments in institution's cuidotecas
+  async getCuidadoresWithApprovedEnrollments(institutionId: number): Promise<User[]> {
+    const result = await db
+      .select({
+        user: users,
+      })
+      .from(users)
+      .innerJoin(cuidadorEnrollments, eq(cuidadorEnrollments.cuidadorId, users.id))
+      .innerJoin(cuidotecas, eq(cuidotecas.id, cuidadorEnrollments.cuidotecaId))
+      .where(
+        and(
+          eq(cuidotecas.institutionId, institutionId),
+          eq(cuidadorEnrollments.status, 'confirmed'),
+          eq(users.role, 'cuidador')
+        )
+      );
+    
+    // Remove duplicates by converting to Map and back to array
+    const uniqueUsers = new Map();
+    result.forEach(item => {
+      uniqueUsers.set(item.user.id, item.user);
+    });
+    
+    return Array.from(uniqueUsers.values());
+  }
+
   async markMessageAsRead(messageId: number): Promise<void> {
     await db
       .update(messages)

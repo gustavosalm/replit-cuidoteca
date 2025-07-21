@@ -138,7 +138,8 @@ export default function Messages() {
                 <DialogHeader>
                   <DialogTitle>Enviar Mensagem em Massa</DialogTitle>
                   <DialogDescription>
-                    Envie uma mensagem para todos os usuários conectados à sua instituição.
+                    Envie uma mensagem para grupos específicos de usuários conectados à sua instituição. 
+                    Escolha entre todos os conectados ou apenas aqueles com matrículas aprovadas nas cuidotecas.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
@@ -149,9 +150,12 @@ export default function Messages() {
                         <SelectValue placeholder="Selecione o grupo" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="parents">Apenas Pais</SelectItem>
-                        <SelectItem value="cuidadores">Apenas Cuidadores</SelectItem>
-                        <SelectItem value="all">Todos (Pais e Cuidadores)</SelectItem>
+                        <SelectItem value="parents">Todos os Pais Conectados</SelectItem>
+                        <SelectItem value="cuidadores">Todos os Cuidadores Conectados</SelectItem>
+                        <SelectItem value="all">Todos os Conectados</SelectItem>
+                        <SelectItem value="approved-parents">Pais com Filhos Aprovados</SelectItem>
+                        <SelectItem value="approved-cuidadores">Cuidadores Aprovados</SelectItem>
+                        <SelectItem value="approved-all">Todos os Aprovados</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

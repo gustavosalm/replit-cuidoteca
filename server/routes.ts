@@ -1760,18 +1760,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Content and target group are required' });
       }
       
-      // Get connected users based on target group
-      const connectedUsers = await storage.getInstitutionConnectedUsers(req.user.id);
+      // Get target users based on target group
       let targetUsers = [];
       
       if (targetGroup === 'parents') {
+        // All connected parents
+        const connectedUsers = await storage.getInstitutionConnectedUsers(req.user.id);
         targetUsers = connectedUsers.filter(user => user.role === 'parent');
       } else if (targetGroup === 'cuidadores') {
+        // All connected cuidadores
+        const connectedUsers = await storage.getInstitutionConnectedUsers(req.user.id);
         targetUsers = connectedUsers.filter(user => user.role === 'cuidador');
       } else if (targetGroup === 'all') {
+        // All connected users (parents and cuidadores)
+        const connectedUsers = await storage.getInstitutionConnectedUsers(req.user.id);
         targetUsers = connectedUsers.filter(user => user.role === 'parent' || user.role === 'cuidador');
+      } else if (targetGroup === 'approved-parents') {
+        // Parents with children approved in institution's cuidotecas
+        targetUsers = await storage.getParentsWithApprovedChildren(req.user.id);
+      } else if (targetGroup === 'approved-cuidadores') {
+        // Cuidadores approved in institution's cuidotecas
+        targetUsers = await storage.getCuidadoresWithApprovedEnrollments(req.user.id);
+      } else if (targetGroup === 'approved-all') {
+        // Both approved parents and approved cuidadores
+        const approvedParents = await storage.getParentsWithApprovedChildren(req.user.id);
+        const approvedCuidadores = await storage.getCuidadoresWithApprovedEnrollments(req.user.id);
+        targetUsers = [...approvedParents, ...approvedCuidadores];
       } else {
-        return res.status(400).json({ message: 'Invalid target group. Use "parents", "cuidadores", or "all"' });
+        return res.status(400).json({ message: 'Invalid target group. Use "parents", "cuidadores", "all", "approved-parents", "approved-cuidadores", or "approved-all"' });
       }
       
       if (targetUsers.length === 0) {
