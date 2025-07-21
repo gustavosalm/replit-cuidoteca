@@ -107,7 +107,7 @@ export default function Header() {
             </div>
             <div className="flex items-center space-x-2">
               <span className="text-sm text-muted-foreground hidden sm:block">
-                {user?.name} ({user?.role?.toUpperCase()})
+                {user?.name}
               </span>
               <Button 
                 variant="ghost" 

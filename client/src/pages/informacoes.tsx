@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertInstitutionDocumentSchema, type InstitutionDocument } from "@shared/schema";
@@ -13,7 +14,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest } from "@/lib/queryClient";
-import { FileText, Download, Upload, Trash2, Calendar, User, Building2, LayoutDashboard } from "lucide-react";
+import { FileText, Download, Upload, Trash2, Calendar, User, Building2, LayoutDashboard, HelpCircle, ChevronDown, ChevronRight } from "lucide-react";
 import { Link } from "wouter";
 import { z } from "zod";
 
@@ -48,6 +49,7 @@ export default function Informacoes() {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [openFaqItems, setOpenFaqItems] = useState<Set<number>>(new Set());
 
   const { data: documents = [], isLoading } = useQuery({
     queryKey: ['/api/documents'],
@@ -210,6 +212,43 @@ export default function Informacoes() {
       });
     }
   };
+
+  const toggleFaqItem = (index: number) => {
+    const newOpenItems = new Set(openFaqItems);
+    if (newOpenItems.has(index)) {
+      newOpenItems.delete(index);
+    } else {
+      newOpenItems.add(index);
+    }
+    setOpenFaqItems(newOpenItems);
+  };
+
+  const faqData = [
+    {
+      question: "Como posso me conectar com a instituição?",
+      answer: "Para se conectar com uma instituição, visite a página de instituições, encontre a instituição desejada e clique no botão 'SOU ESTUDANTE' ou 'SOU CUIDADOR' conforme sua função. Após a conexão, você poderá acessar todas as informações e recursos da instituição."
+    },
+    {
+      question: "Quais documentos posso encontrar aqui?",
+      answer: "Esta seção contém documentos importantes da instituição como regulamentos, manuais, formulários, calendários acadêmicos, normas de funcionamento das cuidotecas e outras informações oficiais que podem ser úteis para estudantes e cuidadores."
+    },
+    {
+      question: "Como faço para solicitar vagas na cuidoteca?",
+      answer: "Após se conectar com a instituição, acesse a seção de cuidotecas no perfil da instituição. Lá você poderá ver as cuidotecas disponíveis e se inscrever diretamente. Sua solicitação será analisada pela coordenação da instituição."
+    },
+    {
+      question: "Como posso participar dos eventos da instituição?",
+      answer: "Os eventos são listados na seção de eventos da plataforma. Você pode confirmar presença diretamente nos eventos que lhe interessam. Alguns eventos podem ter inscrições limitadas, então confirme sua presença com antecedência."
+    },
+    {
+      question: "Como faço para baixar os documentos?",
+      answer: "Para baixar qualquer documento, basta clicar no botão 'Baixar' localizado no card de cada documento. O arquivo será baixado automaticamente para seu dispositivo."
+    },
+    {
+      question: "Posso enviar sugestões ou feedback para a instituição?",
+      answer: "Sim! Você pode usar a seção de comunidade para fazer posts com sugestões, dúvidas ou feedback. A instituição monitora regularmente essas interações e responde quando necessário."
+    }
+  ];
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -411,6 +450,50 @@ export default function Informacoes() {
           ))}
         </div>
       )}
+
+      {/* FAQ Section */}
+      <div className="space-y-6">
+        <div className="flex items-center space-x-2">
+          <HelpCircle className="h-6 w-6 text-accent" />
+          <h2 className="text-2xl font-bold">Perguntas Frequentes</h2>
+        </div>
+        <p className="text-muted-foreground">
+          Encontre respostas para as dúvidas mais comuns sobre como usar a plataforma e se conectar com instituições.
+        </p>
+        
+        <div className="space-y-4">
+          {faqData.map((faq, index) => (
+            <Card key={index} className="overflow-hidden">
+              <Collapsible 
+                open={openFaqItems.has(index)} 
+                onOpenChange={() => toggleFaqItem(index)}
+              >
+                <CollapsibleTrigger asChild>
+                  <CardHeader className="hover:bg-muted/50 cursor-pointer transition-colors">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg font-medium text-left flex-1">
+                        {faq.question}
+                      </CardTitle>
+                      {openFaqItems.has(index) ? (
+                        <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                      ) : (
+                        <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                      )}
+                    </div>
+                  </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent className="pt-0">
+                    <p className="text-muted-foreground leading-relaxed">
+                      {faq.answer}
+                    </p>
+                  </CardContent>
+                </CollapsibleContent>
+              </Collapsible>
+            </Card>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
