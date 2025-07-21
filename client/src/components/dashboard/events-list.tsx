@@ -73,12 +73,7 @@ export default function EventsList() {
               <p className="text-muted-foreground">
                 Nenhum evento encontrado
               </p>
-              <Button
-                onClick={() => setLocation("/events")}
-                className="mt-4"
-              >
-                Ver Eventos Disponíveis
-              </Button>
+
             </div>
           ) : (
             <div className="space-y-4">
@@ -113,12 +108,7 @@ export default function EventsList() {
               ))}
             </div>
           )}
-          
-          <div className="mt-6 text-center">
-            <Button onClick={() => setLocation("/events")}>
-              Ver Todos os Eventos
-            </Button>
-          </div>
+
         </CardContent>
       </Card>
     </section>
