@@ -116,11 +116,20 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### July 21, 2025 - UI Improvements and Logout Fix
+### July 21, 2025 - UI Improvements and Connection System Enhancement
 - **Logout Flow Fix**: Fixed unwanted page refresh during logout process
   - Removed automatic `window.location.reload()` from logout function
   - Added proper query cache clearing using `queryClient.clear()`
   - Logout now smoothly transitions to login page without intermediate refresh
+- **Header Navigation Updates**: Enhanced profile navigation with clear labels
+  - "Meu Perfil" tab redirects to public profile view
+  - "👤 Editar perfil" button goes to profile editing page
+  - "🚪" logout icon performs clean logout without refresh
+- **Connection System Enhancement**: Expanded user-to-user connection capabilities
+  - Cuidadores can now connect to other cuidadores
+  - Parents can now connect to other parents
+  - Maintained existing parent-cuidador connection functionality
+  - Enhanced community building and peer support opportunities
 - **Dashboard Cleanup**: Removed redundant "Criar primeira cuidoteca" button
   - Simplified institution dashboard with single "Nova Cuidoteca" action button
   - Added helpful hint text directing users to main action button

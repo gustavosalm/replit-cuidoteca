@@ -231,10 +231,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'User not found' });
       }
       
-      // Verify users can connect (parent-cuidador relationship)
+      // Verify users can connect (parent-cuidador, parent-parent, cuidador-cuidador relationships)
       const canConnect = 
         (currentUser.role === 'parent' && targetUser.role === 'cuidador') ||
-        (currentUser.role === 'cuidador' && targetUser.role === 'parent');
+        (currentUser.role === 'cuidador' && targetUser.role === 'parent') ||
+        (currentUser.role === 'parent' && targetUser.role === 'parent') ||
+        (currentUser.role === 'cuidador' && targetUser.role === 'cuidador');
         
       if (!canConnect) {
         return res.status(400).json({ message: 'Users cannot connect directly' });
