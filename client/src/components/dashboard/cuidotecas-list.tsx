@@ -107,12 +107,9 @@ export default function CuidotecasList() {
                 <p className="text-muted-foreground">
                   Nenhuma cuidoteca criada ainda
                 </p>
-                <Button
-                  onClick={() => setIsCuidotecaModalOpen(true)}
-                  className="mt-4"
-                >
-                  Criar primeira cuidoteca
-                </Button>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Use o botão "Nova Cuidoteca" acima para começar
+                </p>
               </div>
             ) : (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
