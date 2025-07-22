@@ -19,6 +19,8 @@ export default function Community() {
   const [newPost, setNewPost] = useState("");
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [tempDescription, setTempDescription] = useState("");
+  const [showComments, setShowComments] = useState<{[key: number]: boolean}>({});
+  const [newComment, setNewComment] = useState<{[key: number]: string}>({});
 
   // Get user's connections to check if they're connected to any institution
   const { data: userConnections = [] } = useQuery<any[]>({
@@ -162,6 +164,28 @@ export default function Community() {
     },
   });
 
+  const createCommentMutation = useMutation({
+    mutationFn: async ({ postId, content }: { postId: number; content: string }) => {
+      return await apiRequest("POST", `/api/posts/${postId}/comments`, { content });
+    },
+    onSuccess: (_, { postId }) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/posts", postId, "comments"] });
+      setNewComment(prev => ({ ...prev, [postId]: "" }));
+      toast({
+        title: "Resposta enviada!",
+        description: "Sua resposta foi adicionada ao post",
+      });
+    },
+    onError: (error: any) => {
+      const errorMessage = error?.response?.data?.message || "Não foi possível enviar a resposta";
+      toast({
+        title: "Erro ao responder",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleEditDescription = () => {
     setTempDescription(user?.communityDescription || "");
     setIsEditingDescription(true);
@@ -216,6 +240,121 @@ export default function Community() {
     if (diffInHours < 1) return "agora";
     if (diffInHours < 24) return `${diffInHours}h atrás`;
     return `${Math.floor(diffInHours / 24)}d atrás`;
+  };
+
+  const toggleComments = (postId: number) => {
+    setShowComments(prev => ({
+      ...prev,
+      [postId]: !prev[postId]
+    }));
+  };
+
+  const handleCreateComment = (postId: number) => {
+    const content = newComment[postId]?.trim();
+    if (!content) {
+      toast({
+        title: "Resposta vazia",
+        description: "Digite uma resposta para enviar",
+        variant: "destructive",
+      });
+      return;
+    }
+    createCommentMutation.mutate({ postId, content });
+  };
+
+  // Comments section component
+  const CommentsSection = ({ postId }: { postId: number }) => {
+    const { data: comments = [], isLoading: loadingComments } = useQuery<any[]>({
+      queryKey: ["/api/posts", postId, "comments"],
+      enabled: showComments[postId] === true,
+    });
+
+    return (
+      <div className="mt-4 pt-4 border-t border-gray-200">
+        {/* Comment Form */}
+        <div className="flex space-x-2 mb-4">
+          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+            <User className="h-4 w-4 text-primary" />
+          </div>
+          <div className="flex-1 flex space-x-2">
+            <Textarea
+              placeholder="Escreva uma resposta..."
+              value={newComment[postId] || ""}
+              onChange={(e) => setNewComment(prev => ({ ...prev, [postId]: e.target.value }))}
+              className="min-h-[40px] resize-none"
+              rows={2}
+            />
+            <Button
+              onClick={() => handleCreateComment(postId)}
+              disabled={createCommentMutation.isPending || !newComment[postId]?.trim()}
+              size="sm"
+              className="h-10"
+            >
+              <Send className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Comments List */}
+        {loadingComments ? (
+          <div className="space-y-3">
+            {[1, 2].map((i) => (
+              <div key={i} className="flex space-x-2 animate-pulse">
+                <div className="w-8 h-8 bg-gray-200 rounded-full"></div>
+                <div className="flex-1 space-y-2">
+                  <div className="h-3 bg-gray-200 rounded w-24"></div>
+                  <div className="h-4 bg-gray-200 rounded w-full"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : comments.length > 0 ? (
+          <div className="space-y-3">
+            {comments.map((comment: any) => (
+              <div key={comment.id} className="flex space-x-2">
+                <button
+                  className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center hover:bg-blue-200 transition-colors cursor-pointer flex-shrink-0"
+                  onClick={() => {
+                    window.location.href = `/profile/${comment.authorId}`;
+                  }}
+                >
+                  <User className="h-4 w-4 text-primary" />
+                </button>
+                <div className="flex-1 min-w-0">
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <button
+                        className="font-medium text-sm text-foreground hover:text-primary transition-colors cursor-pointer"
+                        onClick={() => {
+                          window.location.href = `/profile/${comment.authorId}`;
+                        }}
+                      >
+                        {comment.author?.name}
+                      </button>
+                      {comment.author?.role === 'institution' && (
+                        <Badge variant="secondary" className="text-xs">
+                          Admin
+                        </Badge>
+                      )}
+                      <span className="text-xs text-muted-foreground">
+                        {formatTimeAgo(comment.createdAt)}
+                      </span>
+                    </div>
+                    <p className="text-sm text-foreground whitespace-pre-wrap">
+                      {comment.content}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground text-center py-3">
+            Seja a primeira pessoa a responder este post!
+          </p>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -475,18 +614,15 @@ export default function Community() {
                         <Button 
                           variant="ghost" 
                           size="sm"
-                          onClick={() => {
-                            // TODO: Implement reply functionality
-                            toast({
-                              title: "Em desenvolvimento",
-                              description: "A funcionalidade de resposta está sendo desenvolvida."
-                            });
-                          }}
+                          onClick={() => toggleComments(post.id)}
                         >
                           <MessageCircle className="h-4 w-4 mr-1" />
                           Responder
                         </Button>
                       </div>
+                      
+                      {/* Comments Section */}
+                      {showComments[post.id] && <CommentsSection postId={post.id} />}
                     </div>
                   </div>
                 </CardContent>

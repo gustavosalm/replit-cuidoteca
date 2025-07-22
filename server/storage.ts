@@ -4,6 +4,7 @@ import {
   events,
   eventParticipations, 
   posts,
+  comments,
   postVotes,
   eventRsvps,
   notifications,
@@ -25,6 +26,8 @@ import {
   type InsertEventParticipation,
   type Post,
   type InsertPost,
+  type Comment,
+  type InsertComment,
   type PostVote,
   type InsertPostVote,
   type EventRsvp,
@@ -50,6 +53,7 @@ import {
   type UserWithChildren,
   type ChildWithEventParticipations,
   type PostWithAuthor,
+  type CommentWithAuthor,
   type EventWithParticipations,
   type InstitutionWithConnections,
 } from "@shared/schema";
@@ -103,6 +107,11 @@ export interface IStorage {
   getUserVoteOnPost(postId: number, userId: number): Promise<PostVote | undefined>;
   removeVoteFromPost(postId: number, userId: number): Promise<void>;
   updatePostVoteCounts(postId: number): Promise<void>;
+  
+  // Comment operations
+  getCommentsByPost(postId: number): Promise<CommentWithAuthor[]>;
+  createComment(comment: InsertComment): Promise<Comment>;
+  deleteComment(id: number): Promise<void>;
   
   // Event RSVP methods
   rsvpToEvent(rsvp: InsertEventRsvp): Promise<EventRsvp>;
@@ -497,6 +506,26 @@ export class DatabaseStorage implements IStorage {
         downvotes: downvoteCount.length,
       })
       .where(eq(posts.id, postId));
+  }
+
+  // Comment operations
+  async getCommentsByPost(postId: number): Promise<CommentWithAuthor[]> {
+    return await db.query.comments.findMany({
+      where: eq(comments.postId, postId),
+      with: {
+        author: true,
+      },
+      orderBy: [desc(comments.createdAt)],
+    });
+  }
+
+  async createComment(insertComment: InsertComment): Promise<Comment> {
+    const [comment] = await db.insert(comments).values(insertComment).returning();
+    return comment;
+  }
+
+  async deleteComment(id: number): Promise<void> {
+    await db.delete(comments).where(eq(comments.id, id));
   }
 
   // Event RSVP operations

@@ -81,6 +81,14 @@ export const postVotes = pgTable("post_votes", {
   uniqueUserPost: unique().on(table.postId, table.userId),
 }));
 
+export const comments = pgTable("comments", {
+  id: serial("id").primaryKey(),
+  postId: integer("post_id").references(() => posts.id).notNull(),
+  authorId: integer("author_id").references(() => users.id).notNull(),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const eventRsvps = pgTable("event_rsvps", {
   id: serial("id").primaryKey(),
   eventId: integer("event_id").references(() => events.id).notNull(),
@@ -188,6 +196,7 @@ export const passwordResetTokens = pgTable("password_reset_tokens", {
 export const usersRelations = relations(users, ({ many }) => ({
   children: many(children),
   posts: many(posts),
+  comments: many(comments),
   notifications: many(notifications),
   universityConnections: many(universityConnections, {
     relationName: "userConnections",
@@ -240,9 +249,21 @@ export const eventParticipationsRelations = relations(eventParticipations, ({ on
   }),
 }));
 
-export const postsRelations = relations(posts, ({ one }) => ({
+export const postsRelations = relations(posts, ({ one, many }) => ({
   author: one(users, {
     fields: [posts.authorId],
+    references: [users.id],
+  }),
+  comments: many(comments),
+}));
+
+export const commentsRelations = relations(comments, ({ one }) => ({
+  post: one(posts, {
+    fields: [comments.postId],
+    references: [posts.id],
+  }),
+  author: one(users, {
+    fields: [comments.authorId],
     references: [users.id],
   }),
 }));
@@ -376,6 +397,11 @@ export const insertPostSchema = createInsertSchema(posts).omit({
   createdAt: true,
 });
 
+export const insertCommentSchema = createInsertSchema(comments).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertPostVoteSchema = createInsertSchema(postVotes).omit({
   id: true,
   createdAt: true,
@@ -449,6 +475,8 @@ export type EventParticipation = typeof eventParticipations.$inferSelect;
 export type InsertEventParticipation = z.infer<typeof insertEventParticipationSchema>;
 export type Post = typeof posts.$inferSelect;
 export type InsertPost = z.infer<typeof insertPostSchema>;
+export type Comment = typeof comments.$inferSelect;
+export type InsertComment = z.infer<typeof insertCommentSchema>;
 export type PostVote = typeof postVotes.$inferSelect;
 export type InsertPostVote = z.infer<typeof insertPostVoteSchema>;
 export type EventRsvp = typeof eventRsvps.$inferSelect;
@@ -486,6 +514,10 @@ export type EventWithParticipations = Event & {
 };
 
 export type PostWithAuthor = Post & {
+  author: User;
+};
+
+export type CommentWithAuthor = Comment & {
   author: User;
 };
 

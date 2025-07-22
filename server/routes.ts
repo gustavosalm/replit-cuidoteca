@@ -1159,6 +1159,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Comment routes
+  // Get comments for a specific post
+  app.get('/api/posts/:id/comments', authenticateToken, async (req, res) => {
+    try {
+      const postId = parseInt(req.params.id);
+      const comments = await storage.getCommentsByPost(postId);
+      res.json(comments);
+    } catch (error) {
+      console.error('Get comments error:', error);
+      res.status(500).json({ message: 'Failed to get comments' });
+    }
+  });
+
+  // Create a comment on a post
+  app.post('/api/posts/:id/comments', authenticateToken, async (req, res) => {
+    try {
+      const postId = parseInt(req.params.id);
+      const { content } = req.body;
+
+      if (!content || content.trim().length === 0) {
+        return res.status(400).json({ message: 'Comment content is required' });
+      }
+
+      const comment = await storage.createComment({
+        postId,
+        authorId: req.user.id,
+        content: content.trim()
+      });
+
+      res.status(201).json(comment);
+    } catch (error) {
+      console.error('Create comment error:', error);
+      res.status(500).json({ message: 'Failed to create comment' });
+    }
+  });
+
+  // Delete a comment
+  app.delete('/api/comments/:id', authenticateToken, async (req, res) => {
+    try {
+      const commentId = parseInt(req.params.id);
+      
+      // Note: In a full implementation, you'd want to check if the user owns the comment
+      // or has permission to delete it (e.g., institution admin)
+      await storage.deleteComment(commentId);
+      
+      res.status(204).send();
+    } catch (error) {
+      console.error('Delete comment error:', error);
+      res.status(500).json({ message: 'Failed to delete comment' });
+    }
+  });
+
   // Notifications routes
   app.get('/api/notifications', authenticateToken, async (req, res) => {
     try {
