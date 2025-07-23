@@ -58,6 +58,38 @@ export default function CuidotecasSection({ institutionId, user }: CuidotecasSec
     enabled: user?.role === 'cuidador',
   });
 
+  // Fetch approved cuidadores for each cuidoteca
+  const cuidotecaApprovedCuidadores = useQuery({
+    queryKey: ["/api/cuidotecas/approved-cuidadores", cuidotecas.map(c => c.id)],
+    queryFn: async () => {
+      const cuidadoresData = await Promise.all(
+        cuidotecas.map(async (cuidoteca: any) => {
+          try {
+            const response = await fetch(`/api/cuidotecas/${cuidoteca.id}/approved-cuidadores`, {
+              headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+              },
+            });
+            if (!response.ok) throw new Error('Failed to fetch');
+            const cuidadores = await response.json();
+            return { cuidotecaId: cuidoteca.id, cuidadores };
+          } catch (error) {
+            console.warn(`Failed to fetch approved cuidadores for cuidoteca ${cuidoteca.id}:`, error);
+            return { cuidotecaId: cuidoteca.id, cuidadores: [] };
+          }
+        })
+      );
+      
+      // Convert to a map for easier lookup
+      const cuidadoresMap: Record<number, any[]> = {};
+      cuidadoresData.forEach(({ cuidotecaId, cuidadores }) => {
+        cuidadoresMap[cuidotecaId] = cuidadores;
+      });
+      return cuidadoresMap;
+    },
+    enabled: cuidotecas.length > 0,
+  });
+
   const enrollMutation = useMutation({
     mutationFn: async ({ cuidotecaId, childId, requestedDays, requestedHours }: { 
       cuidotecaId: number; 
@@ -303,18 +335,19 @@ export default function CuidotecasSection({ institutionId, user }: CuidotecasSec
                       </div>
                     </div>
 
-                    {cuidoteca.assignedCaretakers?.length > 0 && (
+                    {/* Display approved cuidadores */}
+                    {cuidotecaApprovedCuidadores.data?.[cuidoteca.id]?.length > 0 && (
                       <div className="mt-3">
-                        <p className="text-xs text-muted-foreground mb-1">Cuidadores:</p>
+                        <p className="text-xs text-muted-foreground mb-1">Cuidadores Aprovados:</p>
                         <div className="flex flex-wrap gap-1">
-                          {cuidoteca.assignedCaretakers.slice(0, 2).map((caretaker: string, index: number) => (
+                          {cuidotecaApprovedCuidadores.data[cuidoteca.id].slice(0, 2).map((cuidador: any, index: number) => (
                             <Badge key={index} variant="secondary" className="text-xs">
-                              {caretaker}
+                              {cuidador.name}
                             </Badge>
                           ))}
-                          {cuidoteca.assignedCaretakers.length > 2 && (
+                          {cuidotecaApprovedCuidadores.data[cuidoteca.id].length > 2 && (
                             <Badge variant="secondary" className="text-xs">
-                              +{cuidoteca.assignedCaretakers.length - 2}
+                              +{cuidotecaApprovedCuidadores.data[cuidoteca.id].length - 2}
                             </Badge>
                           )}
                         </div>
