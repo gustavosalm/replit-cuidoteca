@@ -116,6 +116,34 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### July 23, 2025 - Approved Cuidadores Visibility Enhancement
+- **Enhanced Cuidoteca Display**: All users can now see approved cuidadores on cuidotecas pages
+  - Each cuidoteca card shows full approved cuidador profiles with names, university, and course details
+  - Professional card layout with green accent and user icons for approved cuidadores
+  - Displays count of approved children alongside maximum capacity (e.g., "Máx: 10 crianças (3 aprovadas)")
+  - Real-time data fetching from `/api/cuidotecas/{id}/approved-cuidadores` endpoint
+- **Comprehensive Profile Information**: Cuidador cards show complete information including:
+  - Full name and university affiliation
+  - Course information when available
+  - Contact indicators for phone availability
+  - Professional styling with rounded profile cards and green verification badges
+- **Database Integration**: Leverages existing approved cuidadores API endpoints for accurate real-time data
+
+### July 23, 2025 - Comment Voting System Implementation
+- **Complete Comment Voting System**: Implemented comprehensive voting functionality for post replies
+  - Added `commentVotes` table with unique constraints to prevent duplicate voting
+  - Extended `comments` table with `upvotes` and `downvotes` count columns
+  - Users can upvote or downvote comments with toggle functionality (clicking same vote removes it)
+  - Real-time vote count updates with green upvote and red downvote buttons
+- **Comment Voting API**: Full backend support for comment voting operations
+  - Added `/api/comments/{id}/upvote` and `/api/comments/{id}/downvote` endpoints
+  - Implemented storage methods for vote tracking, user vote retrieval, and count updates
+  - Proper error handling and user authentication for all voting operations
+- **Enhanced Community Engagement**: Comments now display vote counts and interactive voting buttons
+  - Consistent styling with post voting system using green/red color scheme
+  - Vote counts update immediately after user interaction
+  - Complete integration with existing comment system and reply functionality
+
 ### July 21, 2025 - Password Reset System Implementation & Events Visibility Fix
 - **Complete Password Reset System**: Implemented secure email-based password reset functionality
   - Added `passwordResetTokens` database table with token validation and expiration
