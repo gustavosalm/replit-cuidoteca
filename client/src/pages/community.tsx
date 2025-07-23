@@ -202,6 +202,36 @@ export default function Community() {
     },
   });
 
+  const upvoteCommentMutation = useMutation({
+    mutationFn: async (commentId: number) => {
+      return await apiRequest("PUT", `/api/comments/${commentId}/upvote`);
+    },
+    onSuccess: (_, commentId) => {
+      // Find which post this comment belongs to and invalidate its comments
+      const allComments = queryClient.getQueryData(["/api/posts"]) as any[];
+      if (allComments) {
+        allComments.forEach((post: any) => {
+          queryClient.invalidateQueries({ queryKey: ["/api/posts", post.id, "comments"] });
+        });
+      }
+    },
+  });
+
+  const downvoteCommentMutation = useMutation({
+    mutationFn: async (commentId: number) => {
+      return await apiRequest("PUT", `/api/comments/${commentId}/downvote`);
+    },
+    onSuccess: (_, commentId) => {
+      // Find which post this comment belongs to and invalidate its comments
+      const allComments = queryClient.getQueryData(["/api/posts"]) as any[];
+      if (allComments) {
+        allComments.forEach((post: any) => {
+          queryClient.invalidateQueries({ queryKey: ["/api/posts", post.id, "comments"] });
+        });
+      }
+    },
+  });
+
   const handleEditDescription = () => {
     setTempDescription(user?.communityDescription || "");
     setIsEditingDescription(true);
@@ -359,6 +389,32 @@ export default function Community() {
                     <p className="text-sm text-foreground whitespace-pre-wrap">
                       {comment.content}
                     </p>
+                  </div>
+                  
+                  {/* Comment voting buttons */}
+                  <div className="flex items-center space-x-2 mt-2 ml-3">
+                    <div className="flex items-center space-x-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => upvoteCommentMutation.mutate(comment.id)}
+                        disabled={upvoteCommentMutation.isPending || downvoteCommentMutation.isPending}
+                        className="h-6 px-2 text-green-600 hover:text-green-700 hover:bg-green-50"
+                      >
+                        <ChevronUp className="h-3 w-3" />
+                        <span className="ml-1 text-xs">{comment.upvotes || 0}</span>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => downvoteCommentMutation.mutate(comment.id)}
+                        disabled={upvoteCommentMutation.isPending || downvoteCommentMutation.isPending}
+                        className="h-6 px-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <ChevronDown className="h-3 w-3" />
+                        <span className="ml-1 text-xs">{comment.downvotes || 0}</span>
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>

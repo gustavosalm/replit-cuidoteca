@@ -5,6 +5,7 @@ import {
   eventParticipations, 
   posts,
   comments,
+  commentVotes,
   postVotes,
   eventRsvps,
   notifications,
@@ -28,6 +29,8 @@ import {
   type InsertPost,
   type Comment,
   type InsertComment,
+  type CommentVote,
+  type InsertCommentVote,
   type PostVote,
   type InsertPostVote,
   type EventRsvp,
@@ -113,6 +116,12 @@ export interface IStorage {
   createComment(comment: InsertComment): Promise<Comment>;
   deleteComment(id: number): Promise<void>;
   getCommentCounts(): Promise<Array<{postId: number; count: number}>>;
+  
+  // Comment voting operations
+  voteOnComment(vote: InsertCommentVote): Promise<CommentVote>;
+  getUserVoteOnComment(commentId: number, userId: number): Promise<CommentVote | undefined>;
+  removeVoteFromComment(commentId: number, userId: number): Promise<void>;
+  updateCommentVoteCounts(commentId: number): Promise<void>;
   
   // Event RSVP methods
   rsvpToEvent(rsvp: InsertEventRsvp): Promise<EventRsvp>;
@@ -542,6 +551,55 @@ export class DatabaseStorage implements IStorage {
       postId: item.postId,
       count: Number(item.count)
     }));
+  }
+
+  // Comment voting operations
+  async voteOnComment(vote: InsertCommentVote): Promise<CommentVote> {
+    // Remove any existing vote by this user on this comment
+    await this.removeVoteFromComment(vote.commentId, vote.userId);
+    
+    // Insert the new vote
+    const [newVote] = await db.insert(commentVotes).values(vote).returning();
+    
+    // Update comment vote counts
+    await this.updateCommentVoteCounts(vote.commentId);
+    
+    return newVote;
+  }
+
+  async getUserVoteOnComment(commentId: number, userId: number): Promise<CommentVote | undefined> {
+    const [vote] = await db.select().from(commentVotes).where(
+      and(eq(commentVotes.commentId, commentId), eq(commentVotes.userId, userId))
+    );
+    return vote || undefined;
+  }
+
+  async removeVoteFromComment(commentId: number, userId: number): Promise<void> {
+    await db.delete(commentVotes).where(
+      and(eq(commentVotes.commentId, commentId), eq(commentVotes.userId, userId))
+    );
+    
+    // Update comment vote counts
+    await this.updateCommentVoteCounts(commentId);
+  }
+
+  async updateCommentVoteCounts(commentId: number): Promise<void> {
+    // Count upvotes and downvotes
+    const upvoteCount = await db.select().from(commentVotes).where(
+      and(eq(commentVotes.commentId, commentId), eq(commentVotes.voteType, 'upvote'))
+    );
+    
+    const downvoteCount = await db.select().from(commentVotes).where(
+      and(eq(commentVotes.commentId, commentId), eq(commentVotes.voteType, 'downvote'))
+    );
+
+    // Update the comment with new counts
+    await db.update(comments)
+      .set({
+        upvotes: upvoteCount.length,
+        downvotes: downvoteCount.length,
+      })
+      .where(eq(comments.id, commentId));
   }
 
   // Event RSVP operations

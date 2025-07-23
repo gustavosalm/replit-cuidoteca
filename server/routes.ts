@@ -1222,6 +1222,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Comment voting routes
+  // Upvote a comment
+  app.put('/api/comments/:id/upvote', authenticateToken, async (req, res) => {
+    try {
+      const commentId = parseInt(req.params.id);
+      const userId = req.user.id;
+
+      // Check if user already has a vote on this comment
+      const existingVote = await storage.getUserVoteOnComment(commentId, userId);
+      
+      if (existingVote && existingVote.voteType === 'upvote') {
+        // Remove the upvote if clicking same vote
+        await storage.removeVoteFromComment(commentId, userId);
+      } else {
+        // Add or change to upvote
+        await storage.voteOnComment({
+          commentId,
+          userId,
+          voteType: 'upvote'
+        });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Comment upvote error:', error);
+      res.status(500).json({ message: 'Failed to upvote comment' });
+    }
+  });
+
+  // Downvote a comment
+  app.put('/api/comments/:id/downvote', authenticateToken, async (req, res) => {
+    try {
+      const commentId = parseInt(req.params.id);
+      const userId = req.user.id;
+
+      // Check if user already has a vote on this comment
+      const existingVote = await storage.getUserVoteOnComment(commentId, userId);
+      
+      if (existingVote && existingVote.voteType === 'downvote') {
+        // Remove the downvote if clicking same vote
+        await storage.removeVoteFromComment(commentId, userId);
+      } else {
+        // Add or change to downvote
+        await storage.voteOnComment({
+          commentId,
+          userId,
+          voteType: 'downvote'
+        });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Comment downvote error:', error);
+      res.status(500).json({ message: 'Failed to downvote comment' });
+    }
+  });
+
   // Notifications routes
   app.get('/api/notifications', authenticateToken, async (req, res) => {
     try {

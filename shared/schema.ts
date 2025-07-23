@@ -86,8 +86,20 @@ export const comments = pgTable("comments", {
   postId: integer("post_id").references(() => posts.id).notNull(),
   authorId: integer("author_id").references(() => users.id).notNull(),
   content: text("content").notNull(),
+  upvotes: integer("upvotes").default(0).notNull(),
+  downvotes: integer("downvotes").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+export const commentVotes = pgTable("comment_votes", {
+  id: serial("id").primaryKey(),
+  commentId: integer("comment_id").references(() => comments.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  voteType: text("vote_type").notNull(), // 'upvote' or 'downvote'
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  uniqueUserComment: unique().on(table.commentId, table.userId),
+}));
 
 export const eventRsvps = pgTable("event_rsvps", {
   id: serial("id").primaryKey(),
@@ -257,13 +269,25 @@ export const postsRelations = relations(posts, ({ one, many }) => ({
   comments: many(comments),
 }));
 
-export const commentsRelations = relations(comments, ({ one }) => ({
+export const commentsRelations = relations(comments, ({ one, many }) => ({
   post: one(posts, {
     fields: [comments.postId],
     references: [posts.id],
   }),
   author: one(users, {
     fields: [comments.authorId],
+    references: [users.id],
+  }),
+  votes: many(commentVotes),
+}));
+
+export const commentVotesRelations = relations(commentVotes, ({ one }) => ({
+  comment: one(comments, {
+    fields: [commentVotes.commentId],
+    references: [comments.id],
+  }),
+  user: one(users, {
+    fields: [commentVotes.userId],
     references: [users.id],
   }),
 }));
@@ -399,6 +423,13 @@ export const insertPostSchema = createInsertSchema(posts).omit({
 
 export const insertCommentSchema = createInsertSchema(comments).omit({
   id: true,
+  upvotes: true,
+  downvotes: true,
+  createdAt: true,
+});
+
+export const insertCommentVoteSchema = createInsertSchema(commentVotes).omit({
+  id: true,
   createdAt: true,
 });
 
@@ -477,6 +508,8 @@ export type Post = typeof posts.$inferSelect;
 export type InsertPost = z.infer<typeof insertPostSchema>;
 export type Comment = typeof comments.$inferSelect;
 export type InsertComment = z.infer<typeof insertCommentSchema>;
+export type CommentVote = typeof commentVotes.$inferSelect;
+export type InsertCommentVote = z.infer<typeof insertCommentVoteSchema>;
 export type PostVote = typeof postVotes.$inferSelect;
 export type InsertPostVote = z.infer<typeof insertPostVoteSchema>;
 export type EventRsvp = typeof eventRsvps.$inferSelect;
