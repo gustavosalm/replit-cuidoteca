@@ -112,6 +112,7 @@ export interface IStorage {
   getCommentsByPost(postId: number): Promise<CommentWithAuthor[]>;
   createComment(comment: InsertComment): Promise<Comment>;
   deleteComment(id: number): Promise<void>;
+  getCommentCounts(): Promise<Array<{postId: number; count: number}>>;
   
   // Event RSVP methods
   rsvpToEvent(rsvp: InsertEventRsvp): Promise<EventRsvp>;
@@ -526,6 +527,21 @@ export class DatabaseStorage implements IStorage {
 
   async deleteComment(id: number): Promise<void> {
     await db.delete(comments).where(eq(comments.id, id));
+  }
+
+  async getCommentCounts(): Promise<Array<{postId: number; count: number}>> {
+    const counts = await db
+      .select({
+        postId: comments.postId,
+        count: sql<number>`count(*)`
+      })
+      .from(comments)
+      .groupBy(comments.postId);
+    
+    return counts.map(item => ({
+      postId: item.postId,
+      count: Number(item.count)
+    }));
   }
 
   // Event RSVP operations

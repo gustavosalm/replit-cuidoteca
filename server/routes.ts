@@ -1211,6 +1211,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get comment counts for all posts
+  app.get('/api/posts/comment-counts', authenticateToken, async (req, res) => {
+    try {
+      const commentCounts = await storage.getCommentCounts();
+      res.json(commentCounts);
+    } catch (error) {
+      console.error('Get comment counts error:', error);
+      res.status(500).json({ message: 'Failed to get comment counts' });
+    }
+  });
+
   // Notifications routes
   app.get('/api/notifications', authenticateToken, async (req, res) => {
     try {

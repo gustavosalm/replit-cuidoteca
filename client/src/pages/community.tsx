@@ -39,6 +39,21 @@ export default function Community() {
     queryKey: ["/api/posts"],
   });
 
+  // Query for comment counts for all posts
+  const { data: commentCounts = {} } = useQuery<{[postId: number]: number}>({
+    queryKey: ["/api/posts/comment-counts"],
+    select: (data: any) => {
+      // Convert array of {postId, count} to object {postId: count}
+      const counts: {[postId: number]: number} = {};
+      if (Array.isArray(data)) {
+        data.forEach((item: any) => {
+          counts[item.postId] = item.count || 0;
+        });
+      }
+      return counts;
+    }
+  });
+
   const createPostMutation = useMutation({
     mutationFn: async (content: string) => {
       return await apiRequest("POST", "/api/posts", { content });
@@ -170,6 +185,7 @@ export default function Community() {
     },
     onSuccess: (_, { postId }) => {
       queryClient.invalidateQueries({ queryKey: ["/api/posts", postId, "comments"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/posts/comment-counts"] });
       setNewComment(prev => ({ ...prev, [postId]: "" }));
       toast({
         title: "Resposta enviada!",
@@ -617,7 +633,7 @@ export default function Community() {
                           onClick={() => toggleComments(post.id)}
                         >
                           <MessageCircle className="h-4 w-4 mr-1" />
-                          Responder
+                          Responder {(commentCounts[post.id] || 0) > 0 && `(${commentCounts[post.id]})`}
                         </Button>
                       </div>
                       
