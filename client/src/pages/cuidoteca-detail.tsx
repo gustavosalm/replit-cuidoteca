@@ -97,14 +97,16 @@ export default function CuidotecaDetail() {
     enabled: !!cuidotecaId,
   });
 
+  // Show approved cuidadores to ALL users, not just institutions
   const { data: approvedCuidadores = [], isLoading: loadingCuidadores } = useQuery({
     queryKey: ["/api/cuidotecas", cuidotecaId, "approved-cuidadores"],
-    enabled: !!cuidotecaId && user?.role === 'institution',
+    enabled: !!cuidotecaId,
   });
 
+  // Show approved children count to ALL users
   const { data: approvedChildren = [], isLoading: loadingChildren } = useQuery({
     queryKey: ["/api/cuidotecas", cuidotecaId, "approved-children"],
-    enabled: !!cuidotecaId && user?.role === 'institution',
+    enabled: !!cuidotecaId,
   });
 
   const { data: pendingChildren = [], isLoading: loadingPendingChildren } = useQuery({
@@ -117,7 +119,7 @@ export default function CuidotecaDetail() {
     enabled: !!cuidotecaId && user?.role === 'institution',
   });
 
-  if (loadingCuidoteca || (user?.role === 'institution' && (loadingCuidadores || loadingChildren || loadingPendingChildren || loadingPendingCuidadores))) {
+  if (loadingCuidoteca || loadingCuidadores || loadingChildren || (user?.role === 'institution' && (loadingPendingChildren || loadingPendingCuidadores))) {
     return (
       <div className="min-h-screen bg-neutral p-4">
         <div className="max-w-6xl mx-auto">
