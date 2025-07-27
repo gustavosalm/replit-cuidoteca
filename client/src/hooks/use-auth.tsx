@@ -17,75 +17,114 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      // Verify token and get user data
-      apiRequest('GET', '/api/users/me')
-        .then(res => res.json())
-        .then(userData => {
-          setUser(userData);
-        })
-        .catch(() => {
-          localStorage.removeItem('token');
-        })
-        .finally(() => {
-          setIsLoading(false);
-        });
-    } else {
-      setIsLoading(false);
-    }
+    //   id: serial("id").primaryKey(),
+    //   email: text("email").notNull().unique(),
+    //   password: text("password").notNull(),
+    //   name: text("name").notNull(),
+    //   phone: text("phone"),
+    //   universityId: text("university_id"),
+    //   course: text("course"),
+    //   semester: text("semester"),
+    //   address: text("address"),
+    //   role: userRoleEnum("role").notNull().default("parent"),
+    //   // Institution-specific fields
+    //   institutionName: text("institution_name"),
+    //   memberCount: integer("member_count").default(0),
+    //   profilePicture: text("profile_picture"),
+    //   communityDescription: text("community_description"),
+    //   createdAt: timestamp("created_at").defaultNow().notNull(),
+    // const token = localStorage.getItem('token');
+    // if (token) {
+    //   // Verify token and get user data
+    //   apiRequest('GET', '/api/users/me')
+    //     .then(res => res.json())
+    //     .then(userData => {
+    //       setUser(userData);
+    //     })
+    //     .catch(() => {
+    //       localStorage.removeItem('token');
+    //     })
+    //     .finally(() => {
+    //       setIsLoading(false);
+    //     });
+    // } else {
+    //   setIsLoading(false);
+    // }
   }, []);
 
   const login = async (email: string, password: string) => {
-    try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password })
-      });
-      
-      if (!response.ok) {
-        throw new Error('Login failed');
-      }
-      
-      const data = await response.json();
-      localStorage.setItem('token', data.token);
-      setUser(data.user);
-    } catch (error) {
-      throw new Error('Login failed');
+    const userData: User = {
+      id: 1,
+      email: 'user@gmail.com',
+      password: 'senha123',
+      phone: '00000-0000',
+      universityId: 'uniId',
+      course: 'Curso',
+      semester: '0',
+      address: 'Endereço',
+      institutionName: 'UFPE',
+      memberCount: 10,
+      profilePicture: '',
+      name: 'Nome',
+      role: 'parent',
+      communityDescription: 'Descrição da comunidade',
+      createdAt: ''
     }
+    setUser(userData);
+    console.log('login');
+    // try {
+    //   const response = await fetch('/api/auth/login', {
+    //     method: 'POST',
+    //     headers: {
+    //       'Content-Type': 'application/json',
+    //     },
+    //     body: JSON.stringify({ email, password })
+    //   });
+      
+    //   if (!response.ok) {
+    //     throw new Error('Login failed');
+    //   }
+      
+    //   const data = await response.json();
+    //   localStorage.setItem('token', data.token);
+    //   setUser(data.user);
+    // } catch (error) {
+    //   throw new Error('Login failed');
+    // }
   };
 
   const register = async (userData: any) => {
-    try {
-      const response = await apiRequest('POST', '/api/auth/register', userData);
-      const data = await response.json();
+    setUser(userData);
+    console.log('registro');
+    // try {
+    //   const response = await apiRequest('POST', '/api/auth/register', userData);
+    //   const data = await response.json();
       
-      localStorage.setItem('token', data.token);
-      setUser(data.user);
-    } catch (error: any) {
-      // The apiRequest function throws errors in format "status: responseText"
-      // Extract the actual error message from the backend
-      if (error.message && error.message.includes(':')) {
-        const errorMessage = error.message.split(':', 2)[1].trim();
-        try {
-          // Try to parse as JSON to get the structured error message
-          const errorData = JSON.parse(errorMessage);
-          throw new Error(errorData.message || 'Registration failed');
-        } catch {
-          // If not JSON, use the error message directly
-          throw new Error(errorMessage || 'Registration failed');
-        }
-      }
-      throw new Error('Registration failed');
-    }
+    //   localStorage.setItem('token', data.token);
+    //   setUser(data.user);
+    // } catch (error: any) {
+    //   // The apiRequest function throws errors in format "status: responseText"
+    //   // Extract the actual error message from the backend
+    //   if (error.message && error.message.includes(':')) {
+    //     const errorMessage = error.message.split(':', 2)[1].trim();
+    //     try {
+    //       // Try to parse as JSON to get the structured error message
+    //       const errorData = JSON.parse(errorMessage);
+    //       throw new Error(errorData.message || 'Registration failed');
+    //     } catch {
+    //       // If not JSON, use the error message directly
+    //       throw new Error(errorMessage || 'Registration failed');
+    //     }
+    //   }
+    //   throw new Error('Registration failed');
+    // }
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
+    console.log('logout')
     setUser(null);
+    // localStorage.removeItem('token');
+    // setUser(null);
     // Clear all query cache to prevent state leakage between users
     // We'll let the calling component handle the navigation instead of forcing a reload
   };

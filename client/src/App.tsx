@@ -21,6 +21,7 @@ import CuidotecaDetail from "@/pages/cuidoteca-detail";
 import Messages from "@/pages/messages";
 import Informacoes from "@/pages/informacoes";
 import NotFound from "@/pages/not-found";
+import { BrowserRouter } from "react-router-dom";
 
 function Router() {
   return (
@@ -50,12 +51,14 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <AuthProvider>
-          <Toaster />
-          <Router />
-        </AuthProvider>
-      </TooltipProvider>
+      <BrowserRouter>
+        <TooltipProvider>
+          <AuthProvider>
+            <Toaster />
+            <Router />
+          </AuthProvider>
+        </TooltipProvider>
+      </BrowserRouter>
     </QueryClientProvider>
   );
 }

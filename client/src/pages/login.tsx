@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLocation } from "wouter";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Heart } from "lucide-react";
 
 export default function Login() {
-  const [, setLocation] = useLocation();
+  const setLocation = useNavigate();
   const { login } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -32,7 +32,7 @@ export default function Login() {
       });
       // Small delay to ensure auth state is updated
       setTimeout(() => {
-        setLocation("/");
+        setLocation("/dashboard");
       }, 100);
     } catch (error) {
       toast({

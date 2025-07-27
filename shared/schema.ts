@@ -25,7 +25,7 @@ export const users = pgTable("users", {
   memberCount: integer("member_count").default(0),
   profilePicture: text("profile_picture"),
   communityDescription: text("community_description"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: text("createdAt"),
 });
 
 export const children = pgTable("children", {
